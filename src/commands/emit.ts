@@ -48,7 +48,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 	const force = args.includes("--force");
 	const dryRun = args.includes("--dry-run");
 	const checkMode = args.includes("--check");
-	const allMode = args.includes("--all");
+	const allMode = args.includes("--all") || checkMode;
 
 	const allRecords = await readJsonl<Prompt>(promptsPath);
 	const current = dedupById(allRecords);
@@ -90,7 +90,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 			for (const p of activePrompts) {
 				const filename = p.emitAs ?? `${p.name}.md`;
 				const outPath = join(resolvedOutDir, filename);
-				const result = resolvePrompt(p.name, current, p.pinned);
+				const result = resolvePrompt(p.name, allRecords, p.pinned);
 				const expected = sectionsToMarkdown(result.sections);
 
 				let actual = "";
@@ -131,7 +131,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 
 		const results = [];
 		for (const p of activePrompts) {
-			const r = await emitPrompt(p, resolvedOutDir, current, force);
+			const r = await emitPrompt(p, resolvedOutDir, allRecords, force);
 			results.push(r);
 		}
 
@@ -178,7 +178,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 	const resolvedPath = outPath ?? join(resolvedOutDir, filename);
 
 	if (!force && existsSync(resolvedPath)) {
-		const result = resolvePrompt(prompt.name, current, prompt.pinned);
+		const result = resolvePrompt(prompt.name, allRecords, prompt.pinned);
 		const content = sectionsToMarkdown(result.sections);
 		const existing = await Bun.file(resolvedPath).text();
 		if (existing === content) {
@@ -197,7 +197,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 		}
 	}
 
-	const result = resolvePrompt(prompt.name, current, prompt.pinned);
+	const result = resolvePrompt(prompt.name, allRecords, prompt.pinned);
 	mkdirSync(dirname(resolvedPath), { recursive: true });
 	await Bun.write(resolvedPath, sectionsToMarkdown(result.sections));
 

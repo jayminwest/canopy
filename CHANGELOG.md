@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-23
+
+### Added
+- `--section name=body` shorthand for `cn create` and `cn update`
+- `ExitError` class for safe error exits inside lock-guarded blocks
+- Open source governance: LICENSE (MIT), CONTRIBUTING.md, SECURITY.md, CODEOWNERS
+- GitHub templates: bug report, feature request, PR template, dependabot, funding
+- Package metadata: description, keywords, author, license, repository, engines
+
+### Fixed
+- `cn emit --check` now implies `--all` (previously required both flags)
+- `cn emit` resolves pinned versions correctly (uses full record history)
+- `cn schema create` accumulates `--required`/`--optional` sections instead of replacing
+- Lock files are always released on error (ExitError replaces `process.exit` in guarded blocks)
+
+### Changed
+- CI workflows updated to `actions/checkout@v6`
+
 ## [0.1.0] - 2026-02-23
 
 ### Added

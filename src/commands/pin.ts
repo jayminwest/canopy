@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function pin(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
@@ -48,7 +49,7 @@ export default async function pin(args: string[], json: boolean): Promise<void> 
 			} else {
 				errorOut(`Prompt '${name}' not found`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		// Verify the target version exists
@@ -63,7 +64,7 @@ export default async function pin(args: string[], json: boolean): Promise<void> 
 			} else {
 				errorOut(`Version ${version} of '${name}' not found`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		const updated: Prompt = {
@@ -111,7 +112,7 @@ export async function defaultUnpin(args: string[], json: boolean): Promise<void>
 			} else {
 				errorOut(`Prompt '${name}' not found`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		const updated: Prompt = {

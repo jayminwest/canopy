@@ -3,6 +3,7 @@ import { generateId } from "../id.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupByIdLast, readJsonl, releaseLock } from "../store.ts";
 import type { Schema, ValidationRule } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function schema(args: string[], json: boolean): Promise<void> {
 	const subcommand = args[0];
@@ -42,22 +43,24 @@ async function schemaCreate(args: string[], json: boolean): Promise<void> {
 	const schemasPath = join(cwd, ".canopy", "schemas.jsonl");
 
 	let name = "";
-	let requiredSections: string[] = [];
-	let optionalSections: string[] = [];
+	const requiredSections: string[] = [];
+	const optionalSections: string[] = [];
 
 	for (let i = 0; i < args.length; i++) {
 		if (args[i] === "--name" && args[i + 1]) {
 			name = args[++i] ?? "";
 		} else if (args[i] === "--required" && args[i + 1]) {
-			requiredSections = (args[++i] ?? "")
+			const parsed = (args[++i] ?? "")
 				.split(",")
 				.map((s) => s.trim())
 				.filter(Boolean);
+			requiredSections.push(...parsed);
 		} else if (args[i] === "--optional" && args[i + 1]) {
-			optionalSections = (args[++i] ?? "")
+			const parsed = (args[++i] ?? "")
 				.split(",")
 				.map((s) => s.trim())
 				.filter(Boolean);
+			optionalSections.push(...parsed);
 		}
 	}
 
@@ -85,7 +88,7 @@ async function schemaCreate(args: string[], json: boolean): Promise<void> {
 			} else {
 				errorOut(`Schema '${name}' already exists`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		const id = generateId(
@@ -239,7 +242,7 @@ async function schemaRuleAdd(args: string[], json: boolean): Promise<void> {
 			} else {
 				errorOut(`Schema '${schemaName}' not found`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		const rule: ValidationRule = { section, pattern, message };

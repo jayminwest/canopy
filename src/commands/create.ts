@@ -4,6 +4,7 @@ import { generateId } from "../id.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function create(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
@@ -16,6 +17,7 @@ export default async function create(args: string[], json: boolean): Promise<voi
 	let schema: string | undefined;
 	let emitAs: string | undefined;
 	let status: "draft" | "active" = "active";
+	const sections: Section[] = [];
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -33,6 +35,25 @@ export default async function create(args: string[], json: boolean): Promise<voi
 			const s = args[++i];
 			if (s === "draft" || s === "active") {
 				status = s;
+			}
+		} else if (arg === "--section" && args[i + 1]) {
+			const next = args[++i] ?? "";
+			const eqIdx = next.indexOf("=");
+			if (eqIdx !== -1) {
+				// --section name=body
+				const sName = next.slice(0, eqIdx);
+				const sBody = next.slice(eqIdx + 1);
+				if (sName) sections.push({ name: sName, body: sBody });
+			} else {
+				// --section name --body value
+				const sName = next;
+				if (args[i + 1] === "--body" && args[i + 2] !== undefined) {
+					i++; // skip --body
+					const sBody = args[++i] ?? "";
+					sections.push({ name: sName, body: sBody });
+				} else {
+					sections.push({ name: sName, body: "" });
+				}
 			}
 		}
 	}
@@ -65,7 +86,7 @@ export default async function create(args: string[], json: boolean): Promise<voi
 			} else {
 				errorOut(`Prompt name '${name}' already exists`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		// Validate parent if specified
@@ -81,7 +102,7 @@ export default async function create(args: string[], json: boolean): Promise<voi
 				} else {
 					errorOut(`Parent prompt '${extendsName}' not found`);
 				}
-				process.exit(1);
+				throw new ExitError(1);
 			}
 		}
 
@@ -90,8 +111,6 @@ export default async function create(args: string[], json: boolean): Promise<voi
 			current.map((p) => p.id),
 		);
 		const now = new Date().toISOString();
-
-		const sections: Section[] = [];
 
 		const prompt: Prompt = {
 			id,

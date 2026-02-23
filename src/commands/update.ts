@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function update(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
@@ -34,7 +35,15 @@ export default async function update(args: string[], json: boolean): Promise<voi
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
 		if (arg === "--section" && args[i + 1]) {
-			sectionName = args[++i];
+			const next = args[++i] ?? "";
+			const eqIdx = next.indexOf("=");
+			if (eqIdx !== -1) {
+				// --section name=body shorthand
+				sectionName = next.slice(0, eqIdx);
+				sectionBody = next.slice(eqIdx + 1);
+			} else {
+				sectionName = next;
+			}
 		} else if (arg === "--body" && args[i + 1] !== undefined) {
 			// body may be empty string
 			sectionBody = args[++i];
@@ -71,7 +80,7 @@ export default async function update(args: string[], json: boolean): Promise<voi
 			} else {
 				errorOut(`Prompt '${nameArg}' not found`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		// Clone and apply mutations

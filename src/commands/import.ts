@@ -4,6 +4,7 @@ import { generateId } from "../id.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 function splitMarkdown(content: string): Section[] {
 	const sections: Section[] = [];
@@ -108,7 +109,7 @@ export default async function importCmd(args: string[], json: boolean): Promise<
 			} else {
 				errorOut(`Prompt name '${name}' already exists`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		const id = generateId(

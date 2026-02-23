@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 import { errorOut, isJsonMode, jsonOut } from "./output.ts";
+import { ExitError } from "./types.ts";
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.1";
 
 const args = process.argv.slice(2);
 
@@ -123,6 +124,10 @@ async function run() {
 }
 
 run().catch((err: unknown) => {
+	// ExitError: message already printed, just exit with the code
+	if (err instanceof ExitError) {
+		process.exit(err.exitCode);
+	}
 	const msg = err instanceof Error ? err.message : String(err);
 	if (json) {
 		jsonOut({ success: false, error: msg });

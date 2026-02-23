@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function archive(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
@@ -29,7 +30,7 @@ export default async function archive(args: string[], json: boolean): Promise<vo
 			} else {
 				errorOut(`Prompt '${name}' not found`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		if (prompt.status === "archived") {
@@ -42,7 +43,7 @@ export default async function archive(args: string[], json: boolean): Promise<vo
 			} else {
 				errorOut(`Prompt '${name}' is already archived`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 
 		const updated: Prompt = {

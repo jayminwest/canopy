@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { ExitError } from "../types.ts";
 import type { Prompt } from "../types.ts";
 import create from "./create.ts";
 import init from "./init.ts";
@@ -92,21 +93,15 @@ describe("cn create", () => {
 		try {
 			await captureOutput(() => create(["--name", "dup-name"], false));
 
-			const origExit = (process as { exit: (code?: number) => never }).exit;
-			let exitCalled = false;
-			(process as { exit: (code?: number) => never }).exit = () => {
-				exitCalled = true;
-				throw new Error("exit");
-			};
-
+			let threw = false;
 			try {
 				await captureOutput(() => create(["--name", "dup-name"], false));
-			} catch {
-				/* expected */
+			} catch (err) {
+				threw = true;
+				expect(err).toBeInstanceOf(ExitError);
 			}
 
-			(process as { exit: (code?: number) => never }).exit = origExit;
-			expect(exitCalled).toBe(true);
+			expect(threw).toBe(true);
 		} finally {
 			process.chdir(origCwd);
 		}
