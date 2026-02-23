@@ -1,0 +1,140 @@
+import { join } from "node:path";
+import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
+import type { Prompt, Schema } from "../types.ts";
+import { validatePrompt } from "../validate.ts";
+
+export default async function validate(args: string[], json: boolean): Promise<void> {
+	const cwd = process.cwd();
+	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
+	const schemasPath = join(cwd, ".canopy", "schemas.jsonl");
+
+	const allMode = args.includes("--all");
+
+	const allPromptRecords = await readJsonl<Prompt>(promptsPath);
+	const allSchemaRecords = await readJsonl<Schema>(schemasPath);
+	const currentPrompts = dedupById(allPromptRecords);
+	const currentSchemas = dedupByIdLast(allSchemaRecords);
+
+	if (allMode) {
+		const promptsWithSchema = currentPrompts.filter((p) => p.schema && p.status !== "archived");
+		const results = [];
+		let allValid = true;
+
+		for (const prompt of promptsWithSchema) {
+			const schemaRecord = currentSchemas.find((s) => s.name === prompt.schema);
+			if (!schemaRecord) {
+				results.push({
+					name: prompt.name,
+					valid: false,
+					errors: [{ section: "", rule: "", message: `Schema '${prompt.schema}' not found` }],
+					warnings: [],
+				});
+				allValid = false;
+				continue;
+			}
+
+			const result = validatePrompt(prompt, schemaRecord, currentPrompts);
+			results.push({ name: prompt.name, ...result });
+			if (!result.valid) allValid = false;
+		}
+
+		if (json) {
+			jsonOut({ success: allValid, command: "validate", results, count: results.length });
+		} else {
+			for (const r of results) {
+				const icon = r.valid ? c.green("✓") : c.red("✗");
+				humanOut(`${icon} ${r.name}`);
+				for (const err of r.errors) {
+					humanOut(`    ${c.red("error")}: [${err.section}] ${err.message}`);
+				}
+				for (const w of r.warnings) {
+					humanOut(`    ${c.yellow("warn")}: ${w}`);
+				}
+			}
+			if (results.length === 0) {
+				humanOut(c.dim("No prompts with schemas to validate."));
+			}
+		}
+
+		if (!allValid) process.exit(1);
+		return;
+	}
+
+	// Single prompt validation
+	const name = args.filter((a) => !a.startsWith("--"))[0];
+	if (!name) {
+		if (json) {
+			jsonOut({ success: false, command: "validate", error: "Prompt name or --all required" });
+		} else {
+			errorOut("Usage: cn validate <name> or cn validate --all");
+		}
+		process.exit(1);
+	}
+
+	const prompt = currentPrompts.find((p) => p.name === name);
+	if (!prompt) {
+		if (json) {
+			jsonOut({ success: false, command: "validate", error: `Prompt '${name}' not found` });
+		} else {
+			errorOut(`Prompt '${name}' not found`);
+		}
+		process.exit(1);
+	}
+
+	if (!prompt.schema) {
+		if (json) {
+			jsonOut({
+				success: false,
+				command: "validate",
+				error: `Prompt '${name}' has no schema assigned`,
+			});
+		} else {
+			errorOut(`Prompt '${name}' has no schema assigned`);
+		}
+		process.exit(1);
+	}
+
+	const schemaRecord = currentSchemas.find((s) => s.name === prompt.schema);
+	if (!schemaRecord) {
+		if (json) {
+			jsonOut({
+				success: false,
+				command: "validate",
+				error: `Schema '${prompt.schema}' not found`,
+			});
+		} else {
+			errorOut(`Schema '${prompt.schema}' not found`);
+		}
+		process.exit(1);
+	}
+
+	const result = validatePrompt(prompt, schemaRecord, currentPrompts);
+
+	if (json) {
+		jsonOut({
+			success: result.valid,
+			command: "validate",
+			name,
+			valid: result.valid,
+			errors: result.errors,
+			warnings: result.warnings,
+		});
+	} else {
+		if (result.valid) {
+			humanOut(`${c.green("✓")} ${name} is valid`);
+			if (result.warnings.length > 0) {
+				for (const w of result.warnings) {
+					humanOut(`  ${c.yellow("warn")}: ${w}`);
+				}
+			}
+		} else {
+			humanOut(`${c.red("✗")} ${name} is invalid`);
+			for (const err of result.errors) {
+				humanOut(`  ${c.red("error")}: [${err.section}] ${err.message}`);
+			}
+		}
+	}
+
+	if (!result.valid) process.exit(1);
+}

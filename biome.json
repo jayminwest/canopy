@@ -1,0 +1,20 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 100
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"complexity": {
+				"noForEach": "off"
+			}
+		}
+	},
+	"files": {
+		"ignore": ["node_modules", ".canopy", ".seeds", ".mulch", ".overstory"]
+	}
+}

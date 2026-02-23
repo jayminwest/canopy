@@ -1,0 +1,4 @@
+node_modules/
+*.lock
+.canopy/*.lock
+bun.lockb
