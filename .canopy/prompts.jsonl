@@ -1,0 +1,8 @@
+{"id":"canopy-20e6","name":"code-review","version":1,"sections":[],"status":"active","createdAt":"2026-02-23T23:28:21.496Z","updatedAt":"2026-02-23T23:28:21.496Z"}
+{"id":"canopy-20e6","name":"code-review","version":2,"sections":[],"status":"active","createdAt":"2026-02-23T23:28:21.496Z","updatedAt":"2026-02-23T23:28:37.274Z"}
+{"id":"canopy-1e4e","name":"base-agent","version":1,"sections":[],"status":"active","createdAt":"2026-02-23T23:28:59.490Z","updatedAt":"2026-02-23T23:28:59.490Z"}
+{"id":"canopy-852c","name":"review-agent","version":1,"sections":[],"status":"active","createdAt":"2026-02-23T23:29:02.385Z","updatedAt":"2026-02-23T23:29:02.385Z","extends":"code-review"}
+{"id":"canopy-20e6","name":"code-review","version":3,"sections":[],"status":"active","createdAt":"2026-02-23T23:28:21.496Z","updatedAt":"2026-02-23T23:29:10.410Z","pinned":1}
+{"id":"canopy-1e4e","name":"base-agent","version":2,"sections":[],"status":"archived","createdAt":"2026-02-23T23:28:59.490Z","updatedAt":"2026-02-23T23:29:10.966Z"}
+{"id":"canopy-20e6","name":"code-review","version":4,"sections":[],"status":"active","createdAt":"2026-02-23T23:28:21.496Z","updatedAt":"2026-02-23T23:29:16.046Z"}
+{"id":"canopy-2095","name":"imported-prompt","version":1,"sections":[{"name":"body","body":"# Test Import\n\nYou are a helpful assistant.\n\n## Constraints\n\nBe concise."}],"status":"active","createdAt":"2026-02-23T23:29:47.480Z","updatedAt":"2026-02-23T23:29:47.480Z"}

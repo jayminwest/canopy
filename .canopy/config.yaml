@@ -1,0 +1,3 @@
+project: canopy
+version: 1
+emitDir: agents
