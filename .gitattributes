@@ -1,0 +1,6 @@
+.seeds/issues.jsonl merge=union
+.seeds/templates.jsonl merge=union
+.mulch/expertise/*.jsonl merge=union
+
+# Use bd merge for beads JSONL files
+.beads/issues.jsonl merge=beads

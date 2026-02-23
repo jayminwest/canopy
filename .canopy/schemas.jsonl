@@ -1,2 +1,3 @@
 {"id":"schema-8f2b","name":"agent-schema","requiredSections":["constraints"],"createdAt":"2026-02-23T23:29:28.148Z","updatedAt":"2026-02-23T23:29:28.148Z"}
 {"id":"schema-8f2b","name":"agent-schema","requiredSections":["constraints"],"createdAt":"2026-02-23T23:29:28.148Z","updatedAt":"2026-02-23T23:29:40.898Z","rules":[{"section":"role","pattern":".{10,}","message":"Role must be at least 10 characters"}]}
+{"id":"schema-0867","name":"test-schema","requiredSections":["role","constraints"],"createdAt":"2026-02-23T23:36:20.348Z","updatedAt":"2026-02-23T23:36:20.348Z"}
