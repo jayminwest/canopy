@@ -1,9 +1,20 @@
 {
 	"name": "canopy",
 	"version": "0.1.0",
+	"description": "Git-native prompt management for AI agent workflows",
 	"type": "module",
 	"bin": {
 		"cn": "src/index.ts"
+	},
+	"keywords": ["prompt", "ai", "agent", "cli", "git", "jsonl"],
+	"author": "Jaymin West",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jayminwest/canopy.git"
+	},
+	"engines": {
+		"bun": ">=1.0.0"
 	},
 	"scripts": {
 		"test": "bun test",
