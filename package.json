@@ -23,7 +23,7 @@
 		"version:bump": "bun run scripts/version-bump.ts"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
+		"@biomejs/biome": "^2.4.4",
 		"@types/bun": "latest",
 		"typescript": "^5.7.3"
 	}
