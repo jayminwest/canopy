@@ -31,3 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zero runtime dependencies (Bun built-ins only)
 - `scripts/version-bump.ts` for atomic version management
 - CI: lint + typecheck + test, auto-tag on version bump
+
+### Fixed
+- Added `.beads` and `.claude` to biome.json ignore patterns
