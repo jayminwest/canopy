@@ -15,6 +15,6 @@
 		}
 	},
 	"files": {
-		"ignore": ["node_modules", ".canopy", ".seeds", ".mulch", ".overstory"]
+		"ignore": ["node_modules", ".canopy", ".seeds", ".mulch", ".overstory", ".beads", ".claude"]
 	}
 }
