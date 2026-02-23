@@ -6,7 +6,14 @@
 	"bin": {
 		"cn": "src/index.ts"
 	},
-	"keywords": ["prompt", "ai", "agent", "cli", "git", "jsonl"],
+	"keywords": [
+		"prompt",
+		"ai",
+		"agent",
+		"cli",
+		"git",
+		"jsonl"
+	],
 	"author": "Jaymin West",
 	"license": "MIT",
 	"repository": {

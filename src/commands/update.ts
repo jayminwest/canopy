@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
-import type { Prompt, Section } from "../types.ts";
+import type { Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
 
 export default async function update(args: string[], json: boolean): Promise<void> {

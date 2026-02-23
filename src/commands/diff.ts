@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
-import { dedupById, readJsonl } from "../store.ts";
+import { readJsonl } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
 
 export interface SectionChange {

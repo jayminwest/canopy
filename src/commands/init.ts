@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { saveConfig } from "../config.ts";
 import { errorOut, humanOut, jsonOut } from "../output.ts";
 
-export default async function init(args: string[], json: boolean): Promise<void> {
+export default async function init(_args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
 	const canopyDir = join(cwd, ".canopy");
 

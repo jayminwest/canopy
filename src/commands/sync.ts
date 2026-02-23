@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 
 export default async function sync(args: string[], json: boolean): Promise<void> {

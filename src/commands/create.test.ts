@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { ExitError } from "../types.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 import create from "./create.ts";
 import init from "./init.ts";
 import renderCmd from "./render.ts";
