@@ -35,7 +35,7 @@ export default async function show(args: string[], json: boolean): Promise<void>
 
 	let prompt: Prompt | undefined;
 	if (version !== undefined) {
-		const versions = getVersions(allRecords, "");
+		const _versions = getVersions(allRecords, "");
 		// Find by name + version
 		prompt = allRecords.find((p) => p.name === name && p.version === version);
 		if (!prompt) {

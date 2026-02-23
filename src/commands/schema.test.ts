@@ -6,7 +6,6 @@ import type { Prompt } from "../types.ts";
 import create from "./create.ts";
 import init from "./init.ts";
 import schemaCmd from "./schema.ts";
-import updateCmd from "./update.ts";
 import validateCmd from "./validate.ts";
 
 const tmpDir = join(import.meta.dir, "../../.test-tmp-schema");

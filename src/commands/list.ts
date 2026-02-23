@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, humanOut, jsonOut } from "../output.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
 

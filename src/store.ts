@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { constants, closeSync, openSync, renameSync, statSync, unlinkSync } from "node:fs";
+import { closeSync, constants, openSync, renameSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { LOCK_RETRY_MS, LOCK_STALE_MS, LOCK_TIMEOUT_MS } from "./types.ts";
 
