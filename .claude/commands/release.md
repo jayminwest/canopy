@@ -8,5 +8,9 @@ Steps:
 4. Bump version in both `package.json` and `src/index.ts` using `bun run version:bump <level>`
 5. Update `CHANGELOG.md` — move items from [Unreleased] to the new version section with today's date
 6. Update `CLAUDE.md` if command counts or structure changed
-7. Update `README.md` if CLI reference or stats changed
+7. Update `README.md`:
+   - Update test count and file count in the Development section (run `bun test` to get current numbers)
+   - Update CLI reference tables if commands were added, removed, or had flags changed
+   - Update command count in Project Structure section if commands were added or removed
+   - Update any other stats or structural information that changed
 8. Present a summary of all changes made — do NOT commit or push
