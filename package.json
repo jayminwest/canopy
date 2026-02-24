@@ -7,7 +7,9 @@
 		"cn": "src/index.ts"
 	},
 	"main": "src/index.ts",
-	"files": ["src"],
+	"files": [
+		"src"
+	],
 	"publishConfig": {
 		"access": "public"
 	},
