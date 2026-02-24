@@ -2,7 +2,7 @@
 import { errorOut, isJsonMode, jsonOut } from "./output.ts";
 import { ExitError } from "./types.ts";
 
-export const VERSION = "0.1.1";
+export const VERSION = "0.1.2";
 
 const args = process.argv.slice(2);
 

@@ -1,6 +1,6 @@
 {
 	"name": "canopy",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Git-native prompt management for AI agent workflows",
 	"type": "module",
 	"bin": {

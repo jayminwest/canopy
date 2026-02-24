@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-23
+
+### Added
+- `--help` / `-h` flag on all subcommands (archive, create, diff, emit, history, import, init, list, pin, unpin, render, schema, show, stats, sync, tree, update, validate)
+- `--description` flag for `cn create` and `cn update`
+- `description` field on the `Prompt` type
+- `cn show` displays description when present
+- README with full CLI reference, composition model docs, and development guide
+
+### Fixed
+- All remaining `process.exit()` calls replaced with `ExitError` (prevents error duplication in lock-guarded blocks)
+- `cn import` now splits on `##` headings by default (`--no-split` to disable, replacing `--split`)
+- Unused import cleanup (`dedupById` in diff.ts, `Section` in update.ts, `errorOut` in list.ts, `join` in sync.ts)
+- Import statement ordering to satisfy Biome linter
+
+### Changed
+- `@biomejs/biome` upgraded from 1.9.4 to 2.4.4
+- `biome.json` updated for v2 configuration format
+
 ## [0.1.1] - 2026-02-23
 
 ### Added

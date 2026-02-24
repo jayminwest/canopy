@@ -64,10 +64,10 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | Command | Description |
 |---------|-------------|
 | `cn init` | Initialize `.canopy/` in current directory |
-| `cn create --name <text>` | Create a new prompt (`--extends`, `--tag`, `--status`, `--section name=body`) |
+| `cn create --name <text>` | Create a new prompt (`--description`, `--extends`, `--tag`, `--status`, `--section name=body`) |
 | `cn show <name>[@version]` | Show prompt record |
 | `cn list` | List prompts (`--tag`, `--status`, `--extends` filters) |
-| `cn update <name>` | Update a prompt — creates new version (`--section`, `--add-section`, `--remove-section`, `--tag`, `--untag`, `--schema`, `--extends`, `--status`, `--name`) |
+| `cn update <name>` | Update a prompt — creates new version (`--section`, `--add-section`, `--remove-section`, `--tag`, `--untag`, `--description`, `--schema`, `--extends`, `--status`, `--name`) |
 | `cn archive <name>` | Soft-delete a prompt |
 | `cn render <name>[@version]` | Resolve inheritance, output sections (`--format md\|json`) |
 | `cn tree <name>` | Show inheritance tree |
@@ -99,7 +99,7 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 
 | Command | Description |
 |---------|-------------|
-| `cn import <path>` | Import `.md` file as prompt (`--name`, `--split`, `--tag`) |
+| `cn import <path>` | Import `.md` file as prompt (`--name`, `--no-split`, `--tag`); splits on `##` by default |
 | `cn stats` | Show active/draft/archived counts |
 | `cn sync` | Stage and commit `.canopy/` changes (`--status`) |
 
