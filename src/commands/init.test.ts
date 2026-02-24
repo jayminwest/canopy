@@ -94,22 +94,15 @@ describe("cn init", () => {
 		try {
 			await captureOutput(() => init([], false));
 
-			// Second init should fail
-			let exitCalled = false;
-			const origExit = process.exit.bind(process);
-			(process as { exit: (code?: number) => never }).exit = () => {
-				exitCalled = true;
-				throw new Error("process.exit called");
-			};
-
+			// Second init should fail with ExitError
+			let threw = false;
 			try {
 				await captureOutput(() => init([], false));
 			} catch {
-				// expected
+				threw = true;
 			}
 
-			(process as { exit: (code?: number) => never }).exit = origExit;
-			expect(exitCalled).toBe(true);
+			expect(threw).toBe(true);
 		} finally {
 			process.chdir(origCwd);
 		}

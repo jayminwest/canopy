@@ -186,25 +186,17 @@ describe("cn schema", () => {
 				await appendJsonl(promptsPath, updated);
 			}
 
-			// Mock process.exit
-			const origExit = (process as { exit: (code?: number) => never }).exit;
-			let exitCode = 0;
-			(process as { exit: (code?: number) => never }).exit = (code) => {
-				exitCode = code ?? 0;
-				throw new Error("exit");
-			};
-
+			let threw = false;
 			try {
 				const { stdout } = await captureOutput(() => validateCmd(["bad-agent", "--json"], true));
 				const parsed = JSON.parse(stdout.trim());
 				expect(parsed.valid).toBe(false);
 				expect(parsed.errors.length).toBeGreaterThan(0);
 			} catch {
-				/* expected exit */
+				threw = true;
 			}
 
-			(process as { exit: (code?: number) => never }).exit = origExit;
-			expect(exitCode).toBe(1);
+			expect(threw).toBe(true);
 		} finally {
 			process.chdir(origCwd);
 		}

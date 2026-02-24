@@ -2,10 +2,20 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, getVersions, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function history(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn history <name> [options]
+
+Options:
+  --limit <n>    Max versions to show (default: 20)
+  --json         Output as JSON`);
+		return;
+	}
 
 	const name = args.filter((a) => !a.startsWith("--"))[0];
 	if (!name) {
@@ -14,7 +24,7 @@ export default async function history(args: string[], json: boolean): Promise<vo
 		} else {
 			errorOut("Usage: cn history <name> [--limit <n>]");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	let limit = 20;
@@ -34,7 +44,7 @@ export default async function history(args: string[], json: boolean): Promise<vo
 		} else {
 			errorOut(`Prompt '${name}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const versions = getVersions(allRecords, prompt.id).reverse().slice(0, limit);

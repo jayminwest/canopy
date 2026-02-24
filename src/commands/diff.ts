@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { readJsonl } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export interface SectionChange {
 	section: string;
@@ -38,6 +39,14 @@ export default async function diff(args: string[], json: boolean): Promise<void>
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn diff <name> <v1> <v2> [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
+
 	const positional = args.filter((a) => !a.startsWith("--"));
 	if (positional.length < 3) {
 		if (json) {
@@ -45,7 +54,7 @@ export default async function diff(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut("Usage: cn diff <name> <v1> <v2>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const [name, v1Str, v2Str] = positional as [string, string, string];
@@ -54,7 +63,7 @@ export default async function diff(args: string[], json: boolean): Promise<void>
 
 	if (Number.isNaN(v1) || Number.isNaN(v2)) {
 		errorOut("Versions must be integers");
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const allRecords = await readJsonl<Prompt>(promptsPath);
@@ -69,7 +78,7 @@ export default async function diff(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`Prompt '${name}@${v1}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	if (!to) {
@@ -78,7 +87,7 @@ export default async function diff(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`Prompt '${name}@${v2}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const changes = diffSections(from.sections, to.sections);

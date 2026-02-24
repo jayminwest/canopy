@@ -2,10 +2,18 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { saveConfig } from "../config.ts";
 import { errorOut, humanOut, jsonOut } from "../output.ts";
+import { ExitError } from "../types.ts";
 
 export default async function init(_args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
 	const canopyDir = join(cwd, ".canopy");
+
+	if (_args.includes("--help") || _args.includes("-h")) {
+		humanOut(`Usage: cn init
+
+Initializes .canopy/ in the current directory with config and empty JSONL stores.`);
+		return;
+	}
 
 	if (existsSync(canopyDir)) {
 		if (json) {
@@ -13,7 +21,7 @@ export default async function init(_args: string[], json: boolean): Promise<void
 		} else {
 			errorOut(".canopy/ already exists");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	mkdirSync(canopyDir, { recursive: true });

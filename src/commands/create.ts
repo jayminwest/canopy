@@ -10,8 +10,26 @@ export default async function create(args: string[], json: boolean): Promise<voi
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn create --name <name> [options]
+
+Options:
+  --name <name>           Prompt name (required)
+  --description <text>    Short description
+  --extends <name>        Inherit from parent prompt
+  --tag <tag>             Add tag (repeatable)
+  --schema <name>         Assign validation schema
+  --emit-as <filename>    Custom emit filename
+  --status draft|active   Initial status (default: active)
+  --section <name> --body <text>  Add section
+  --section <name>=<text>         Add section (shorthand)
+  --json                  Output as JSON`);
+		return;
+	}
+
 	// Parse flags
 	let name = "";
+	let description: string | undefined;
 	let extendsName: string | undefined;
 	const tags: string[] = [];
 	let schema: string | undefined;
@@ -23,6 +41,8 @@ export default async function create(args: string[], json: boolean): Promise<voi
 		const arg = args[i];
 		if (arg === "--name" && args[i + 1]) {
 			name = args[++i] ?? "";
+		} else if (arg === "--description" && args[i + 1]) {
+			description = args[++i];
 		} else if (arg === "--extends" && args[i + 1]) {
 			extendsName = args[++i];
 		} else if (arg === "--tag" && args[i + 1]) {
@@ -64,7 +84,7 @@ export default async function create(args: string[], json: boolean): Promise<voi
 		} else {
 			errorOut("--name is required");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const config = await loadConfig(cwd);
@@ -122,6 +142,7 @@ export default async function create(args: string[], json: boolean): Promise<voi
 			updatedAt: now,
 		};
 
+		if (description) prompt.description = description;
 		if (extendsName) prompt.extends = extendsName;
 		if (tags.length > 0) prompt.tags = tags;
 		if (schema) prompt.schema = schema;

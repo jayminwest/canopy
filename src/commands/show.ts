@@ -2,10 +2,19 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, getVersions, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function show(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn show <name>[@version] [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
 
 	// Parse name@version syntax
 	const nameArg = args.filter((a) => !a.startsWith("--"))[0];
@@ -15,7 +24,7 @@ export default async function show(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut("Usage: cn show <name>[@version]");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	let name = nameArg;
@@ -27,7 +36,7 @@ export default async function show(args: string[], json: boolean): Promise<void>
 		version = Number.parseInt(nameArg.slice(atIdx + 1), 10);
 		if (Number.isNaN(version)) {
 			errorOut(`Invalid version: ${nameArg.slice(atIdx + 1)}`);
-			process.exit(1);
+			throw new ExitError(1);
 		}
 	}
 
@@ -59,13 +68,14 @@ export default async function show(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`Prompt '${name}${versionStr}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	if (json) {
 		jsonOut({ success: true, command: "show", prompt });
 	} else {
 		humanOut(`${c.bold(prompt.name)} (${prompt.id}) v${prompt.version}`);
+		if (prompt.description) humanOut(c.dim(prompt.description));
 		humanOut(
 			`Status: ${prompt.status}  Created: ${prompt.createdAt}  Updated: ${prompt.updatedAt}`,
 		);

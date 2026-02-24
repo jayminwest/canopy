@@ -8,6 +8,14 @@ export default async function archive(args: string[], json: boolean): Promise<vo
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn archive <name> [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
+
 	const name = args.filter((a) => !a.startsWith("--"))[0];
 	if (!name) {
 		if (json) {
@@ -15,7 +23,7 @@ export default async function archive(args: string[], json: boolean): Promise<vo
 		} else {
 			errorOut("Usage: cn archive <name>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	await acquireLock(promptsPath);

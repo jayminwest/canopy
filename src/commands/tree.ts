@@ -2,10 +2,19 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function tree(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn tree <name> [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
 
 	const name = args.filter((a) => !a.startsWith("--"))[0];
 	if (!name) {
@@ -14,7 +23,7 @@ export default async function tree(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut("Usage: cn tree <name>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const allRecords = await readJsonl<Prompt>(promptsPath);
@@ -27,7 +36,7 @@ export default async function tree(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`Prompt '${name}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Build ancestry chain (parents)

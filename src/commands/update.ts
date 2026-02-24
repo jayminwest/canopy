@@ -8,6 +8,26 @@ export default async function update(args: string[], json: boolean): Promise<voi
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn update <name> [options]
+
+Options:
+  --name <name>              Rename prompt
+  --description <text>       Update description
+  --section <name> --body <text>  Update section body
+  --section <name>=<text>         Update section (shorthand)
+  --add-section <name>       Add new section
+  --remove-section <name>    Remove section (empty body)
+  --tag <tag>                Add tag (repeatable)
+  --untag <tag>              Remove tag (repeatable)
+  --schema <name>            Assign schema
+  --extends <name>           Change parent
+  --emit-as <filename>       Custom emit filename
+  --status draft|active|archived  Change status
+  --json                     Output as JSON`);
+		return;
+	}
+
 	const nameArg = args.filter((a) => !a.startsWith("--"))[0];
 	if (!nameArg) {
 		if (json) {
@@ -15,7 +35,7 @@ export default async function update(args: string[], json: boolean): Promise<voi
 		} else {
 			errorOut("Usage: cn update <name> [options]");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Parse flags
@@ -26,6 +46,7 @@ export default async function update(args: string[], json: boolean): Promise<voi
 	let removeSectionName: string | undefined;
 	const addTags: string[] = [];
 	const removeTags: string[] = [];
+	let newDescription: string | undefined;
 	let newSchema: string | undefined;
 	let newExtends: string | undefined;
 	let newEmitAs: string | undefined;
@@ -55,6 +76,8 @@ export default async function update(args: string[], json: boolean): Promise<voi
 			addTags.push(args[++i] ?? "");
 		} else if (arg === "--untag" && args[i + 1]) {
 			removeTags.push(args[++i] ?? "");
+		} else if (arg === "--description" && args[i + 1]) {
+			newDescription = args[++i];
 		} else if (arg === "--schema" && args[i + 1]) {
 			newSchema = args[++i];
 		} else if (arg === "--extends" && args[i + 1]) {
@@ -131,6 +154,7 @@ export default async function update(args: string[], json: boolean): Promise<voi
 		for (const t of removeTags) currentTags.delete(t);
 		updated.tags = currentTags.size > 0 ? Array.from(currentTags) : undefined;
 
+		if (newDescription !== undefined) updated.description = newDescription;
 		if (newSchema !== undefined) updated.schema = newSchema;
 		if (newExtends !== undefined) updated.extends = newExtends;
 		if (newEmitAs !== undefined) updated.emitAs = newEmitAs;

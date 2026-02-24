@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
+import { ExitError } from "../types.ts";
 import { validatePrompt } from "../validate.ts";
 
 export default async function validate(args: string[], json: boolean): Promise<void> {
@@ -15,6 +16,16 @@ export default async function validate(args: string[], json: boolean): Promise<v
 	const allSchemaRecords = await readJsonl<Schema>(schemasPath);
 	const currentPrompts = dedupById(allPromptRecords);
 	const currentSchemas = dedupByIdLast(allSchemaRecords);
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn validate <name> [options]
+       cn validate --all
+
+Options:
+  --all     Validate all prompts with schemas
+  --json    Output as JSON`);
+		return;
+	}
 
 	if (allMode) {
 		const promptsWithSchema = currentPrompts.filter((p) => p.schema && p.status !== "archived");
@@ -57,7 +68,7 @@ export default async function validate(args: string[], json: boolean): Promise<v
 			}
 		}
 
-		if (!allValid) process.exit(1);
+		if (!allValid) throw new ExitError(1);
 		return;
 	}
 
@@ -69,7 +80,7 @@ export default async function validate(args: string[], json: boolean): Promise<v
 		} else {
 			errorOut("Usage: cn validate <name> or cn validate --all");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const prompt = currentPrompts.find((p) => p.name === name);
@@ -79,7 +90,7 @@ export default async function validate(args: string[], json: boolean): Promise<v
 		} else {
 			errorOut(`Prompt '${name}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	if (!prompt.schema) {
@@ -92,7 +103,7 @@ export default async function validate(args: string[], json: boolean): Promise<v
 		} else {
 			errorOut(`Prompt '${name}' has no schema assigned`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const schemaRecord = currentSchemas.find((s) => s.name === prompt.schema);
@@ -106,7 +117,7 @@ export default async function validate(args: string[], json: boolean): Promise<v
 		} else {
 			errorOut(`Schema '${prompt.schema}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const result = validatePrompt(prompt, schemaRecord, currentPrompts);
@@ -136,5 +147,5 @@ export default async function validate(args: string[], json: boolean): Promise<v
 		}
 	}
 
-	if (!result.valid) process.exit(1);
+	if (!result.valid) throw new ExitError(1);
 }

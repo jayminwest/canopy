@@ -7,6 +7,16 @@ export default async function list(args: string[], json: boolean): Promise<void>
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn list [options]
+
+Options:
+  --tag <tag>     Filter by tag
+  --status <s>    Filter by status (draft|active|archived)
+  --json          Output as JSON`);
+		return;
+	}
+
 	// Parse filters
 	let filterTag: string | undefined;
 	let filterStatus: string | undefined;

@@ -41,25 +41,36 @@ export default async function importCmd(args: string[], json: boolean): Promise<
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn import <path> --name <name> [options]
+
+Options:
+  --name <name>    Prompt name (required)
+  --no-split       Import as single body section (default: split on ## headings)
+  --tag <tag>      Add tag (repeatable)
+  --json           Output as JSON`);
+		return;
+	}
+
 	const pathArg = args.filter((a) => !a.startsWith("--"))[0];
 	if (!pathArg) {
 		if (json) {
 			jsonOut({ success: false, command: "import", error: "File path required" });
 		} else {
-			errorOut("Usage: cn import <path> --name <name> [--split] [--tag <tag>]");
+			errorOut("Usage: cn import <path> --name <name> [--no-split] [--tag <tag>]");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	let name = "";
-	let split = false;
+	let noSplit = false;
 	const tags: string[] = [];
 
 	for (let i = 0; i < args.length; i++) {
 		if (args[i] === "--name" && args[i + 1]) {
 			name = args[++i] ?? "";
-		} else if (args[i] === "--split") {
-			split = true;
+		} else if (args[i] === "--no-split") {
+			noSplit = true;
 		} else if (args[i] === "--tag" && args[i + 1]) {
 			tags.push(args[++i] ?? "");
 		}
@@ -71,7 +82,7 @@ export default async function importCmd(args: string[], json: boolean): Promise<
 		} else {
 			errorOut("--name is required");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Read input file
@@ -84,12 +95,12 @@ export default async function importCmd(args: string[], json: boolean): Promise<
 		} else {
 			errorOut(`Cannot read file: ${pathArg}`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
-	const sections: Section[] = split
-		? splitMarkdown(content)
-		: [{ name: "body", body: content.trim() }];
+	const sections: Section[] = noSplit
+		? [{ name: "body", body: content.trim() }]
+		: splitMarkdown(content);
 
 	const config = await loadConfig(cwd);
 

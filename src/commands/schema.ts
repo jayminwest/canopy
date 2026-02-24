@@ -6,6 +6,20 @@ import type { Schema, ValidationRule } from "../types.ts";
 import { ExitError } from "../types.ts";
 
 export default async function schema(args: string[], json: boolean): Promise<void> {
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn schema <subcommand> [options]
+
+Subcommands:
+  create --name <name> --required <sections> [--optional <sections>]
+  show <name>
+  list
+  rule add <schema> --section <name> --pattern <regex> --message <text>
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
+
 	const subcommand = args[0];
 
 	switch (subcommand) {
@@ -23,7 +37,7 @@ export default async function schema(args: string[], json: boolean): Promise<voi
 				await schemaRuleAdd(args.slice(2), json);
 			} else {
 				errorOut(`Unknown schema rule subcommand: ${args[1]}`);
-				process.exit(1);
+				throw new ExitError(1);
 			}
 			break;
 		default:
@@ -34,7 +48,7 @@ export default async function schema(args: string[], json: boolean): Promise<voi
 					`Unknown schema subcommand: ${subcommand}\nUsage: cn schema create|show|list|rule`,
 				);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 	}
 }
 
@@ -70,7 +84,7 @@ async function schemaCreate(args: string[], json: boolean): Promise<void> {
 		} else {
 			errorOut("--name is required");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	await acquireLock(schemasPath);
@@ -129,7 +143,7 @@ async function schemaShow(args: string[], json: boolean): Promise<void> {
 		} else {
 			errorOut("Usage: cn schema show <name>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const allRecords = await readJsonl<Schema>(schemasPath);
@@ -142,7 +156,7 @@ async function schemaShow(args: string[], json: boolean): Promise<void> {
 		} else {
 			errorOut(`Schema '${name}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	if (json) {
@@ -196,7 +210,7 @@ async function schemaRuleAdd(args: string[], json: boolean): Promise<void> {
 				"Usage: cn schema rule add <schema-name> --section <name> --pattern <regex> --message <text>",
 			);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	let section = "";
@@ -223,7 +237,7 @@ async function schemaRuleAdd(args: string[], json: boolean): Promise<void> {
 		} else {
 			errorOut("--section, --pattern, and --message are required");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	await acquireLock(schemasPath);

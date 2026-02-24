@@ -3,10 +3,20 @@ import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 export default async function renderCmd(args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn render <name>[@version] [options]
+
+Options:
+  --format md|json    Output format (default: md)
+  --json              Output as JSON`);
+		return;
+	}
 
 	const nameArg = args.filter((a) => !a.startsWith("--"))[0];
 	if (!nameArg) {
@@ -15,7 +25,7 @@ export default async function renderCmd(args: string[], json: boolean): Promise<
 		} else {
 			errorOut("Usage: cn render <name>[@version] [--format md|json]");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Parse name@version
@@ -76,6 +86,6 @@ export default async function renderCmd(args: string[], json: boolean): Promise<
 		} else {
 			errorOut(`Error: ${msg}`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 }

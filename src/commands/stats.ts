@@ -5,6 +5,15 @@ import type { Prompt, Schema } from "../types.ts";
 
 export default async function stats(_args: string[], json: boolean): Promise<void> {
 	const cwd = process.cwd();
+
+	if (_args.includes("--help") || _args.includes("-h")) {
+		humanOut(`Usage: cn stats [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
+
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 	const schemasPath = join(cwd, ".canopy", "schemas.jsonl");
 

@@ -1,8 +1,19 @@
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { ExitError } from "../types.ts";
 
 export default async function sync(args: string[], json: boolean): Promise<void> {
-	const statusOnly = args.includes("--status");
 	const cwd = process.cwd();
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn sync [options]
+
+Options:
+  --status    Check sync status without committing
+  --json      Output as JSON`);
+		return;
+	}
+
+	const statusOnly = args.includes("--status");
 
 	// Check git status of .canopy/
 	const statusResult = Bun.spawnSync(["git", "status", "--porcelain", ".canopy/"], { cwd });
@@ -14,7 +25,7 @@ export default async function sync(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`git error: ${stderr}`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const statusOutput = statusResult.stdout.toString().trim();
@@ -61,7 +72,7 @@ export default async function sync(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`git add failed: ${err}`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Commit
@@ -75,7 +86,7 @@ export default async function sync(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`git commit failed: ${err}`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	if (json) {

@@ -118,7 +118,7 @@ async function run() {
 			} else {
 				errorOut(`Unknown command: ${command}\nRun "cn --help" for usage.`);
 			}
-			process.exit(1);
+			throw new ExitError(1);
 		}
 	}
 }

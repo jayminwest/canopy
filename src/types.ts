@@ -7,6 +7,7 @@ export interface Section {
 export interface Prompt {
 	id: string;
 	name: string;
+	description?: string;
 	version: number;
 	sections: Section[];
 	extends?: string;

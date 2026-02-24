@@ -8,6 +8,14 @@ export default async function pin(args: string[], json: boolean): Promise<void> 
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn pin <name>@<version> [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
+
 	const nameArg = args.filter((a) => !a.startsWith("--"))[0];
 	if (!nameArg) {
 		if (json) {
@@ -15,7 +23,7 @@ export default async function pin(args: string[], json: boolean): Promise<void> 
 		} else {
 			errorOut("Usage: cn pin <name>@<version>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Parse name@version
@@ -26,7 +34,7 @@ export default async function pin(args: string[], json: boolean): Promise<void> 
 		} else {
 			errorOut("Usage: cn pin <name>@<version>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const name = nameArg.slice(0, atIdx);
@@ -34,7 +42,7 @@ export default async function pin(args: string[], json: boolean): Promise<void> 
 
 	if (Number.isNaN(version)) {
 		errorOut("Version must be an integer");
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	await acquireLock(promptsPath);
@@ -90,6 +98,14 @@ export async function defaultUnpin(args: string[], json: boolean): Promise<void>
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn unpin <name> [options]
+
+Options:
+  --json    Output as JSON`);
+		return;
+	}
+
 	const name = args.filter((a) => !a.startsWith("--"))[0];
 	if (!name) {
 		if (json) {
@@ -97,7 +113,7 @@ export async function defaultUnpin(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut("Usage: cn unpin <name>");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	await acquireLock(promptsPath);

@@ -5,6 +5,7 @@ import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
+import { ExitError } from "../types.ts";
 
 function sectionsToMarkdown(sections: { name: string; body: string }[]): string {
 	const parts: string[] = [];
@@ -44,6 +45,21 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 	const cwd = process.cwd();
 	const promptsPath = join(cwd, ".canopy", "prompts.jsonl");
 	const config = await loadConfig(cwd);
+
+	if (args.includes("--help") || args.includes("-h")) {
+		humanOut(`Usage: cn emit <name> [options]
+       cn emit --all [options]
+
+Options:
+  --all              Emit all active prompts
+  --check            Check if emitted files are up to date
+  --out <path>       Custom output path (single prompt)
+  --out-dir <path>   Custom output directory (--all mode)
+  --force            Overwrite even if unchanged
+  --dry-run          Show what would be emitted
+  --json             Output as JSON`);
+		return;
+	}
 
 	const force = args.includes("--force");
 	const dryRun = args.includes("--dry-run");
@@ -125,7 +141,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 				}
 			}
 
-			if (stale.length > 0) process.exit(1);
+			if (stale.length > 0) throw new ExitError(1);
 			return;
 		}
 
@@ -154,7 +170,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut("Usage: cn emit <name> [--out <path>] or cn emit --all");
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	const prompt = current.find((p) => p.name === nameArg);
@@ -164,7 +180,7 @@ export default async function emit(args: string[], json: boolean): Promise<void>
 		} else {
 			errorOut(`Prompt '${nameArg}' not found`);
 		}
-		process.exit(1);
+		throw new ExitError(1);
 	}
 
 	// Custom --out path
