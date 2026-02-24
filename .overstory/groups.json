@@ -8,5 +8,19 @@
 		"status": "completed",
 		"createdAt": "2026-02-23T21:56:28.330Z",
 		"completedAt": "2026-02-23T22:34:48.258Z"
+	},
+	{
+		"id": "group-310fb43b",
+		"name": "cli-infra-modernization",
+		"memberIssueIds": [
+			"seeds-0fde",
+			"seeds-787b",
+			"seeds-3162",
+			"seeds-3c3c",
+			"seeds-f8c4"
+		],
+		"status": "completed",
+		"createdAt": "2026-02-24T03:40:59.523Z",
+		"completedAt": "2026-02-24T07:55:12.096Z"
 	}
 ]

@@ -3,7 +3,7 @@
 
 project:
   name: canopy
-  root: /Users/jayminwest/Projects/canopy
+  root: /Users/jayminwest/Projects/os-eco/canopy
   canonicalBranch: main
   qualityGates:
     - name: Tests
@@ -24,7 +24,8 @@ agents:
   maxSessionsPerRun: 0
 worktrees:
   baseDir: .overstory/worktrees
-beads:
+taskTracker:
+  backend: auto
   enabled: true
 mulch:
   enabled: true
