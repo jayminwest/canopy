@@ -11,7 +11,6 @@ program
 	.description("Git-native prompt management for AI agent workflows")
 	.version(VERSION, "-v, --version", "Show version");
 
-// Register commands that have been migrated to the register pattern
 const { register: registerInit } = await import("./commands/init.ts");
 const { register: registerShow } = await import("./commands/show.ts");
 const { register: registerList } = await import("./commands/list.ts");
@@ -22,6 +21,15 @@ const { register: registerStats } = await import("./commands/stats.ts");
 const { register: registerSync } = await import("./commands/sync.ts");
 const { register: registerDiff } = await import("./commands/diff.ts");
 const { register: registerRender } = await import("./commands/render.ts");
+const { register: registerCreate } = await import("./commands/create.ts");
+const { register: registerUpdate } = await import("./commands/update.ts");
+const { register: registerEmit } = await import("./commands/emit.ts");
+const { register: registerSchema } = await import("./commands/schema.ts");
+const { register: registerValidate } = await import("./commands/validate.ts");
+const { register: registerImport } = await import("./commands/import.ts");
+const { register: registerPrime } = await import("./commands/prime.ts");
+const { register: registerOnboard } = await import("./commands/onboard.ts");
+const { register: registerPin } = await import("./commands/pin.ts");
 
 registerInit(program);
 registerShow(program);
@@ -33,56 +41,15 @@ registerStats(program);
 registerSync(program);
 registerDiff(program);
 registerRender(program);
-
-// Pass-through dispatch for commands not yet on the register pattern.
-// Uses process.argv directly so all flags/options are forwarded unchanged.
-function addPassThrough(
-	cmdName: string,
-	loader: () => Promise<{ default: (args: string[], json: boolean) => Promise<void> }>,
-) {
-	program
-		.command(cmdName)
-		.allowUnknownOption()
-		.allowExcessArguments()
-		.action(async () => {
-			const rawArgs = process.argv.slice(3);
-			const json = isJsonMode(rawArgs);
-			const mod = await loader();
-			await mod.default(rawArgs, json);
-		});
-}
-
-addPassThrough("create", () => import("./commands/create.ts"));
-addPassThrough("update", () => import("./commands/update.ts"));
-addPassThrough("emit", () => import("./commands/emit.ts"));
-addPassThrough("schema", () => import("./commands/schema.ts"));
-addPassThrough("validate", () => import("./commands/validate.ts"));
-addPassThrough("import", () => import("./commands/import.ts"));
-addPassThrough("prime", () => import("./commands/prime.ts"));
-addPassThrough("onboard", () => import("./commands/onboard.ts"));
-
-// pin / unpin share a module with separate entry points
-program
-	.command("pin")
-	.allowUnknownOption()
-	.allowExcessArguments()
-	.action(async () => {
-		const rawArgs = process.argv.slice(3);
-		const json = isJsonMode(rawArgs);
-		const mod = await import("./commands/pin.ts");
-		await mod.default(rawArgs, json);
-	});
-
-program
-	.command("unpin")
-	.allowUnknownOption()
-	.allowExcessArguments()
-	.action(async () => {
-		const rawArgs = process.argv.slice(3);
-		const json = isJsonMode(rawArgs);
-		const mod = await import("./commands/pin.ts");
-		await mod.defaultUnpin(rawArgs, json);
-	});
+registerCreate(program);
+registerUpdate(program);
+registerEmit(program);
+registerSchema(program);
+registerValidate(program);
+registerImport(program);
+registerPrime(program);
+registerOnboard(program);
+registerPin(program); // registers both pin and unpin
 
 program.parseAsync(process.argv).catch((err: unknown) => {
 	if (err instanceof ExitError) {
