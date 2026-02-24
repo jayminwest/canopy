@@ -109,12 +109,16 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | `cn import <path>` | Import `.md` file as prompt (`--name`, `--no-split`, `--tag`); splits on `##` by default |
 | `cn stats` | Show active/draft/archived counts |
 | `cn sync` | Stage and commit `.canopy/` changes (`--status`) |
+| `cn doctor` | Check project health and data integrity (`--fix`, `--verbose`) |
+| `cn upgrade` | Upgrade canopy to the latest npm version (`--check`) |
 
 ### Global Options
 
 | Flag | Description |
 |------|-------------|
 | `--json` | Structured JSON output (all commands) |
+| `-q`, `--quiet` | Suppress non-error output |
+| `--verbose` | Extra diagnostic output |
 | `--help`, `-h` | Show help |
 | `--version`, `-v` | Show version |
 
@@ -155,7 +159,7 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 ## Development
 
 ```bash
-# Run tests (84 tests across 12 files)
+# Run tests (92 tests across 13 files)
 bun test
 
 # Lint + format check
@@ -198,7 +202,7 @@ canopy/
     yaml.ts                Minimal YAML parser
     id.ts                  ID generation
     markers.ts             Marker-based section management for CLAUDE.md
-    commands/              One file per CLI subcommand (20 commands)
+    commands/              One file per CLI subcommand (22 commands)
   scripts/
     version-bump.ts        Atomic version management
   .canopy/                 On-disk data store

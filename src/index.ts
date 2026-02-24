@@ -4,7 +4,7 @@ import { Command, Help } from "commander";
 import { errorOut, isJsonMode, jsonOut, palette, setQuiet } from "./output.ts";
 import { ExitError } from "./types.ts";
 
-export const VERSION = "0.1.5";
+export const VERSION = "0.1.6";
 
 const rawArgs = process.argv.slice(2);
 

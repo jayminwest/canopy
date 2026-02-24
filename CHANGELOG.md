@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-02-24
+
+### Added
+- `cn doctor` command — checks project health and data integrity (config, JSONL integrity, schema validation, inheritance chains, emit staleness, stale locks, version sync) with `--fix` and `--verbose` flags
+- `cn upgrade` command — upgrades canopy to the latest npm version (`--check` for dry-run)
+- Global `--quiet` / `-q` flag — suppresses non-error output across all commands
+- Global `--verbose` flag — enables extra diagnostic output
+- Rich `--version --json` output — returns name, version, runtime, and platform metadata
+- `setQuiet()` function in `output.ts` for programmatic quiet mode control
+
 ## [0.1.5] - 2026-02-24
 
 ### Added

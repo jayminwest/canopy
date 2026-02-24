@@ -1,6 +1,6 @@
 # Canopy
 
-Git-native prompt management for AI agent workflows. Zero dependencies, JSONL storage, Bun runtime.
+Git-native prompt management for AI agent workflows. Minimal dependencies, JSONL storage, Bun runtime.
 
 ## Quick Reference
 
@@ -19,7 +19,7 @@ SPEC.md            # Detailed specification
 
 ## Conventions
 
-- Zero runtime dependencies — Bun built-ins only
+- Minimal runtime dependencies — chalk + commander only
 - Concurrent-safe: advisory file locks + atomic writes
 - Git-native: JSONL is diffable/mergeable, `merge=union` gitattribute
 - All CLI commands support `--json` flag
