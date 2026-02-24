@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-02-24
+
+### Added
+- `--add-section` and `--remove-section` flags are now repeatable in `cn update` — add/remove multiple sections in a single command
+
+### Fixed
+- `--remove-section` splices section out entirely for non-inheriting prompts (previously set empty body for all prompts)
+- `cn init` checks for canopy-specific path in `.gitattributes` instead of broad `merge=union` string (avoids skipping setup when other tools already have merge=union)
+- `package.json` formatted for biome 2.4.4 compatibility
+
+### Changed
+- Package renamed to `@os-eco/canopy-cli` with npm publish config (`main`, `files`, `publishConfig`)
+- CI: replaced auto-tag workflow with npm publish workflow (version-check, publish with provenance, auto-tag, GitHub release)
+
 ## [0.1.3] - 2026-02-24
 
 ### Added

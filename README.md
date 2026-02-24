@@ -155,7 +155,7 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 ## Development
 
 ```bash
-# Run tests (83 tests across 12 files)
+# Run tests (84 tests across 12 files)
 bun test
 
 # Lint + format check
@@ -181,7 +181,7 @@ Use the bump script to update both:
 bun run version:bump <major|minor|patch>
 ```
 
-Git tags are created automatically by GitHub Actions when a version bump is pushed to `main`.
+Version bumps pushed to `main` trigger the publish workflow: npm publish with provenance, git tag, and GitHub release.
 
 ## Project Structure
 
@@ -202,7 +202,7 @@ canopy/
   scripts/
     version-bump.ts        Atomic version management
   .canopy/                 On-disk data store
-  .github/workflows/       CI + auto-tag
+  .github/workflows/       CI + npm publish
 ```
 
 ## Contributing
