@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -148,4 +149,24 @@ Options:
 	} finally {
 		releaseLock(promptsPath);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("pin")
+		.description("Pin prompt to a specific version")
+		.argument("<name@version>", "Prompt name and version (e.g. my-prompt@2)")
+		.action(async (nameAtVersion: string) => {
+			const json: boolean = program.opts().json ?? false;
+			await pin([nameAtVersion], json);
+		});
+
+	program
+		.command("unpin")
+		.description("Remove version pin from a prompt")
+		.argument("<name>", "Prompt name")
+		.action(async (name: string) => {
+			const json: boolean = program.opts().json ?? false;
+			await defaultUnpin([name], json);
+		});
 }

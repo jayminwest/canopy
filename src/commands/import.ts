@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
 import { generateId } from "../id.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
@@ -159,4 +160,26 @@ Options:
 	} finally {
 		releaseLock(promptsPath);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("import")
+		.description("Import an existing .md file as a prompt")
+		.argument("<path>", "Path to the markdown file")
+		.requiredOption("--name <name>", "Prompt name")
+		.option("--no-split", "Import as single body section (default: split on ## headings)")
+		.option(
+			"--tag <tag>",
+			"Add tag (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.action(async (filePath: string, opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = [filePath, "--name", opts.name as string];
+			if (!opts.split) args.push("--no-split");
+			for (const tag of opts.tag as string[]) args.push("--tag", tag);
+			await importCmd(args, json);
+		});
 }

@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
 import { generateId } from "../id.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
@@ -158,4 +159,40 @@ Options:
 	} finally {
 		releaseLock(promptsPath);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("create")
+		.description("Create a new prompt")
+		.requiredOption("--name <name>", "Prompt name")
+		.option("--description <text>", "Short description")
+		.option("--extends <name>", "Inherit from parent prompt")
+		.option(
+			"--tag <tag>",
+			"Add tag (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.option("--schema <name>", "Assign validation schema")
+		.option("--emit-as <filename>", "Custom emit filename")
+		.option("--status <status>", "Initial status (draft|active)", "active")
+		.option(
+			"--section <name=body>",
+			"Add section (name=body shorthand, repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.action(async (opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = ["--name", opts.name as string];
+			if (opts.description) args.push("--description", opts.description as string);
+			if (opts.extends) args.push("--extends", opts.extends as string);
+			for (const tag of opts.tag as string[]) args.push("--tag", tag);
+			if (opts.schema) args.push("--schema", opts.schema as string);
+			if (opts.emitAs) args.push("--emit-as", opts.emitAs as string);
+			if (opts.status) args.push("--status", opts.status as string);
+			for (const section of opts.section as string[]) args.push("--section", section);
+			await create(args, json);
+		});
 }

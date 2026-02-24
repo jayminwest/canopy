@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { generateId } from "../id.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupByIdLast, readJsonl, releaseLock } from "../store.ts";
@@ -277,4 +278,76 @@ async function schemaRuleAdd(args: string[], json: boolean): Promise<void> {
 	} finally {
 		releaseLock(schemasPath);
 	}
+}
+
+export function register(program: Command): void {
+	const schemaCmd = program
+		.command("schema")
+		.description("Schema management (create, show, list, rule add)");
+
+	schemaCmd
+		.command("create")
+		.description("Create a validation schema")
+		.requiredOption("--name <name>", "Schema name")
+		.option(
+			"--required <sections>",
+			"Required sections (comma-separated, repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.option(
+			"--optional <sections>",
+			"Optional sections (comma-separated, repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.action(async (opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = ["--name", opts.name as string];
+			for (const r of opts.required as string[]) args.push("--required", r);
+			for (const o of opts.optional as string[]) args.push("--optional", o);
+			await schemaCreate(args, json);
+		});
+
+	schemaCmd
+		.command("show")
+		.description("Show schema details")
+		.argument("<name>", "Schema name")
+		.action(async (name: string) => {
+			const json: boolean = program.opts().json ?? false;
+			await schemaShow([name], json);
+		});
+
+	schemaCmd
+		.command("list")
+		.description("List all schemas")
+		.action(async () => {
+			const json: boolean = program.opts().json ?? false;
+			await schemaList([], json);
+		});
+
+	const ruleCmd = schemaCmd.command("rule").description("Schema rule management");
+
+	ruleCmd
+		.command("add")
+		.description("Add a validation rule to a schema")
+		.argument("<schema>", "Schema name")
+		.requiredOption("--section <name>", "Section to validate")
+		.requiredOption("--pattern <regex>", "Regex pattern that must match")
+		.requiredOption("--message <text>", "Error message if validation fails")
+		.action(async (schemaName: string, opts) => {
+			const json: boolean = program.opts().json ?? false;
+			await schemaRuleAdd(
+				[
+					schemaName,
+					"--section",
+					opts.section as string,
+					"--pattern",
+					opts.pattern as string,
+					"--message",
+					opts.message as string,
+				],
+				json,
+			);
+		});
 }
