@@ -1,10 +1,17 @@
 import chalk from "chalk";
 
+let _quiet = false;
+
+export function setQuiet(v: boolean): void {
+	_quiet = v;
+}
+
 export function jsonOut(data: unknown): void {
 	console.log(JSON.stringify(data, null, 2));
 }
 
 export function humanOut(text: string): void {
+	if (_quiet) return;
 	console.log(text);
 }
 

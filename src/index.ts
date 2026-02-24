@@ -1,16 +1,34 @@
 #!/usr/bin/env bun
 import chalk from "chalk";
 import { Command, Help } from "commander";
-import { errorOut, isJsonMode, jsonOut, palette } from "./output.ts";
+import { errorOut, isJsonMode, jsonOut, palette, setQuiet } from "./output.ts";
 import { ExitError } from "./types.ts";
 
 export const VERSION = "0.1.5";
+
+const rawArgs = process.argv.slice(2);
+
+// --version --json: rich metadata output (before Commander processes version flag)
+if ((rawArgs.includes("-v") || rawArgs.includes("--version")) && rawArgs.includes("--json")) {
+	const platform = `${process.platform}-${process.arch}`;
+	console.log(
+		JSON.stringify({ name: "@os-eco/canopy-cli", version: VERSION, runtime: "bun", platform }),
+	);
+	process.exit();
+}
+
+// Apply quiet mode early (before Commander parses)
+if (rawArgs.includes("--quiet") || rawArgs.includes("-q")) {
+	setQuiet(true);
+}
 
 const program = new Command();
 program
 	.name("cn")
 	.description("Prompt management & composition")
 	.version(VERSION, "-v, --version", "Show version")
+	.option("-q, --quiet", "Suppress non-error output")
+	.option("--verbose", "Extra diagnostic output")
 	.addHelpCommand(false)
 	.configureHelp({
 		formatHelp(cmd: Command, helper: Help): string {
@@ -35,6 +53,8 @@ program
 				["-h, --help", "Show help"],
 				["-v, --version", "Show version"],
 				["--json", "Output as JSON"],
+				["-q, --quiet", "Suppress non-error output"],
+				["--verbose", "Extra diagnostic output"],
 			];
 			const optLines: string[] = ["\nOptions:"];
 			for (const [flag, desc] of opts) {
@@ -67,6 +87,8 @@ const { register: registerImport } = await import("./commands/import.ts");
 const { register: registerPrime } = await import("./commands/prime.ts");
 const { register: registerOnboard } = await import("./commands/onboard.ts");
 const { register: registerPin } = await import("./commands/pin.ts");
+const { register: registerDoctor } = await import("./commands/doctor.ts");
+const { register: registerUpgrade } = await import("./commands/upgrade.ts");
 
 registerInit(program);
 registerShow(program);
@@ -87,6 +109,8 @@ registerImport(program);
 registerPrime(program);
 registerOnboard(program);
 registerPin(program); // registers both pin and unpin
+registerDoctor(program);
+registerUpgrade(program);
 
 program.parseAsync(process.argv).catch((err: unknown) => {
 	if (err instanceof ExitError) {
