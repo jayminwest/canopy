@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
-import { Command } from "commander";
-import { errorOut, isJsonMode, jsonOut } from "./output.ts";
+import chalk from "chalk";
+import { Command, Help } from "commander";
+import { errorOut, isJsonMode, jsonOut, palette } from "./output.ts";
 import { ExitError } from "./types.ts";
 
 export const VERSION = "0.1.4";
@@ -8,8 +9,44 @@ export const VERSION = "0.1.4";
 const program = new Command();
 program
 	.name("cn")
-	.description("Git-native prompt management for AI agent workflows")
-	.version(VERSION, "-v, --version", "Show version");
+	.description("Prompt management & composition")
+	.version(VERSION, "-v, --version", "Show version")
+	.addHelpCommand(false)
+	.configureHelp({
+		formatHelp(cmd: Command, helper: Help): string {
+			if (cmd.parent) {
+				return Help.prototype.formatHelp.call(helper, cmd, helper);
+			}
+			const header = `${palette.brand(chalk.bold("canopy"))} ${palette.muted(`v${VERSION}`)} — Prompt management & composition\n\nUsage: cn <command> [options]`;
+
+			const cmdLines: string[] = ["\nCommands:"];
+			for (const sub of cmd.commands) {
+				const name = sub.name();
+				const argStr = sub.registeredArguments
+					.map((a) => (a.required ? `<${a.name()}>` : `[${a.name()}]`))
+					.join(" ");
+				const rawEntry = argStr ? `${name} ${argStr}` : name;
+				const colored = argStr ? `${chalk.green(name)} ${chalk.dim(argStr)}` : chalk.green(name);
+				const pad = " ".repeat(Math.max(18 - rawEntry.length, 2));
+				cmdLines.push(`  ${colored}${pad}${sub.description()}`);
+			}
+
+			const opts: [string, string][] = [
+				["-h, --help", "Show help"],
+				["-v, --version", "Show version"],
+				["--json", "Output as JSON"],
+			];
+			const optLines: string[] = ["\nOptions:"];
+			for (const [flag, desc] of opts) {
+				const pad = " ".repeat(Math.max(18 - flag.length, 2));
+				optLines.push(`  ${chalk.dim(flag)}${pad}${desc}`);
+			}
+
+			const footer = `\nRun '${chalk.dim("cn")} <command> --help' for command-specific help.`;
+
+			return `${[header, ...cmdLines, ...optLines, footer].join("\n")}\n`;
+		},
+	});
 
 const { register: registerInit } = await import("./commands/init.ts");
 const { register: registerShow } = await import("./commands/show.ts");
