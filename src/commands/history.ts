@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, getVersions, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -64,4 +65,19 @@ Options:
 		humanOut(`  ${c.bold(`v${v.version}`)}${marker}${pinned}  ${c.dim(v.updatedAt)}`);
 		humanOut(`    sections: ${v.sections.map((s) => s.name).join(", ") || c.dim("(none)")}`);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("history")
+		.description("Show version timeline for a prompt")
+		.argument("<name>", "Prompt name")
+		.option("--limit <n>", "Max versions to show (default: 20)")
+		.option("--json", "Output as JSON")
+		.action(async (name: string, options: { limit?: string; json?: boolean }) => {
+			const args = [name];
+			if (options.limit) args.push("--limit", options.limit);
+			if (options.json) args.push("--json");
+			await history(args, options.json ?? false);
+		});
 }

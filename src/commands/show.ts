@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, getVersions, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -91,4 +92,16 @@ Options:
 			humanOut("");
 		}
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("show")
+		.description("Show prompt record")
+		.argument("<name>", "Prompt name (name[@version])")
+		.option("--json", "Output as JSON")
+		.action(async (name: string, options: { json?: boolean }) => {
+			const args = [name, ...(options.json ? ["--json"] : [])];
+			await show(args, options.json ?? false);
+		});
 }

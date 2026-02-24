@@ -1,3 +1,4 @@
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { ExitError } from "../types.ts";
 
@@ -94,4 +95,18 @@ Options:
 	} else {
 		humanOut(`${c.green("✓")} Committed ${changedFiles.length} file(s): ${msg}`);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("sync")
+		.description("Stage and commit .canopy/ changes")
+		.option("--status", "Check sync status without committing")
+		.option("--json", "Output as JSON")
+		.action(async (options: { status?: boolean; json?: boolean }) => {
+			const args: string[] = [];
+			if (options.status) args.push("--status");
+			if (options.json) args.push("--json");
+			await sync(args, options.json ?? false);
+		});
 }

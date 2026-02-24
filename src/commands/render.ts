@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, readJsonl } from "../store.ts";
@@ -88,4 +89,19 @@ Options:
 		}
 		throw new ExitError(1);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("render")
+		.description("Render full prompt (resolve inheritance)")
+		.argument("<name>", "Prompt name (name[@version])")
+		.option("--format <format>", "Output format: md or json (default: md)")
+		.option("--json", "Output as JSON")
+		.action(async (name: string, options: { format?: string; json?: boolean }) => {
+			const args = [name];
+			if (options.format) args.push("--format", options.format);
+			if (options.json) args.push("--json");
+			await renderCmd(args, options.json ?? false);
+		});
 }

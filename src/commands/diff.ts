@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { readJsonl } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
@@ -132,4 +133,18 @@ Options:
 			humanOut(c.dim(`    ${fromLines} → ${toLines} lines`));
 		}
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("diff")
+		.description("Section-aware diff between two prompt versions")
+		.argument("<name>", "Prompt name")
+		.argument("<v1>", "First version number")
+		.argument("<v2>", "Second version number")
+		.option("--json", "Output as JSON")
+		.action(async (name: string, v1: string, v2: string, options: { json?: boolean }) => {
+			const args = [name, v1, v2, ...(options.json ? ["--json"] : [])];
+			await diff(args, options.json ?? false);
+		});
 }

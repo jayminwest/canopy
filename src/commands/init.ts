@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import type { Command } from "commander";
 import { saveConfig } from "../config.ts";
 import { errorOut, humanOut, jsonOut } from "../output.ts";
 import { ExitError } from "../types.ts";
@@ -64,4 +65,15 @@ Initializes .canopy/ in the current directory with config and empty JSONL stores
 		humanOut("  schemas.jsonl created");
 		humanOut("  .gitattributes updated with merge=union");
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("init")
+		.description("Initialize .canopy/ in current directory")
+		.option("--json", "Output as JSON")
+		.action(async (options: { json?: boolean }) => {
+			const args = options.json ? ["--json"] : [];
+			await init(args, options.json ?? false);
+		});
 }

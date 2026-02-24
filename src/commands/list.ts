@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, humanOut, jsonOut } from "../output.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -68,4 +69,24 @@ Options:
 		}
 		humanOut(c.dim(`\n${prompts.length} prompt${prompts.length === 1 ? "" : "s"}`));
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("list")
+		.description("List prompts")
+		.option("--tag <tag>", "Filter by tag")
+		.option("--status <status>", "Filter by status (draft|active|archived)")
+		.option("--extends <name>", "Filter by parent prompt")
+		.option("--json", "Output as JSON")
+		.action(
+			async (options: { tag?: string; status?: string; extends?: string; json?: boolean }) => {
+				const args: string[] = [];
+				if (options.tag) args.push("--tag", options.tag);
+				if (options.status) args.push("--status", options.status);
+				if (options.extends) args.push("--extends", options.extends);
+				if (options.json) args.push("--json");
+				await list(args, options.json ?? false);
+			},
+		);
 }

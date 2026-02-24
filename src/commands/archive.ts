@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -71,4 +72,16 @@ Options:
 	} finally {
 		releaseLock(promptsPath);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("archive")
+		.description("Archive a prompt")
+		.argument("<name>", "Prompt name")
+		.option("--json", "Output as JSON")
+		.action(async (name: string, options: { json?: boolean }) => {
+			const args = [name, ...(options.json ? ["--json"] : [])];
+			await archive(args, options.json ?? false);
+		});
 }

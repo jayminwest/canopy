@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, humanOut, jsonOut } from "../output.ts";
 import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
@@ -50,4 +51,15 @@ Options:
 		humanOut(`  ${withSchema} with schema  |  ${withParent} with parent (inheritance)`);
 		humanOut(`  ${schemas.length} schema(s) defined`);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("stats")
+		.description("Show prompt statistics")
+		.option("--json", "Output as JSON")
+		.action(async (options: { json?: boolean }) => {
+			const args = options.json ? ["--json"] : [];
+			await stats(args, options.json ?? false);
+		});
 }

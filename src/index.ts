@@ -1,144 +1,95 @@
 #!/usr/bin/env bun
+import { Command } from "commander";
 import { errorOut, isJsonMode, jsonOut } from "./output.ts";
 import { ExitError } from "./types.ts";
 
 export const VERSION = "0.1.2";
 
-const args = process.argv.slice(2);
+const program = new Command();
+program
+	.name("cn")
+	.description("Git-native prompt management for AI agent workflows")
+	.version(VERSION, "-v, --version", "Show version");
 
-if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
-	printHelp();
-	process.exit(0);
+// Register commands that have been migrated to the register pattern
+const { register: registerInit } = await import("./commands/init.ts");
+const { register: registerShow } = await import("./commands/show.ts");
+const { register: registerList } = await import("./commands/list.ts");
+const { register: registerArchive } = await import("./commands/archive.ts");
+const { register: registerHistory } = await import("./commands/history.ts");
+const { register: registerTree } = await import("./commands/tree.ts");
+const { register: registerStats } = await import("./commands/stats.ts");
+const { register: registerSync } = await import("./commands/sync.ts");
+const { register: registerDiff } = await import("./commands/diff.ts");
+const { register: registerRender } = await import("./commands/render.ts");
+
+registerInit(program);
+registerShow(program);
+registerList(program);
+registerArchive(program);
+registerHistory(program);
+registerTree(program);
+registerStats(program);
+registerSync(program);
+registerDiff(program);
+registerRender(program);
+
+// Pass-through dispatch for commands not yet on the register pattern.
+// Uses process.argv directly so all flags/options are forwarded unchanged.
+function addPassThrough(
+	cmdName: string,
+	loader: () => Promise<{ default: (args: string[], json: boolean) => Promise<void> }>,
+) {
+	program
+		.command(cmdName)
+		.allowUnknownOption()
+		.allowExcessArguments()
+		.action(async () => {
+			const rawArgs = process.argv.slice(3);
+			const json = isJsonMode(rawArgs);
+			const mod = await loader();
+			await mod.default(rawArgs, json);
+		});
 }
 
-if (args[0] === "--version" || args[0] === "-v") {
-	console.log(VERSION);
-	process.exit(0);
-}
+addPassThrough("create", () => import("./commands/create.ts"));
+addPassThrough("update", () => import("./commands/update.ts"));
+addPassThrough("emit", () => import("./commands/emit.ts"));
+addPassThrough("schema", () => import("./commands/schema.ts"));
+addPassThrough("validate", () => import("./commands/validate.ts"));
+addPassThrough("import", () => import("./commands/import.ts"));
+addPassThrough("prime", () => import("./commands/prime.ts"));
+addPassThrough("onboard", () => import("./commands/onboard.ts"));
 
-const command = args[0];
-const rest = args.slice(1);
-const json = isJsonMode(args);
+// pin / unpin share a module with separate entry points
+program
+	.command("pin")
+	.allowUnknownOption()
+	.allowExcessArguments()
+	.action(async () => {
+		const rawArgs = process.argv.slice(3);
+		const json = isJsonMode(rawArgs);
+		const mod = await import("./commands/pin.ts");
+		await mod.default(rawArgs, json);
+	});
 
-async function run() {
-	switch (command) {
-		case "init": {
-			const mod = await import("./commands/init.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "create": {
-			const mod = await import("./commands/create.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "show": {
-			const mod = await import("./commands/show.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "list": {
-			const mod = await import("./commands/list.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "update": {
-			const mod = await import("./commands/update.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "archive": {
-			const mod = await import("./commands/archive.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "render": {
-			const mod = await import("./commands/render.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "tree": {
-			const mod = await import("./commands/tree.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "history": {
-			const mod = await import("./commands/history.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "diff": {
-			const mod = await import("./commands/diff.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "pin": {
-			const mod = await import("./commands/pin.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "unpin": {
-			const mod = await import("./commands/pin.ts");
-			await mod.defaultUnpin(rest, json);
-			break;
-		}
-		case "emit": {
-			const mod = await import("./commands/emit.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "schema": {
-			const mod = await import("./commands/schema.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "validate": {
-			const mod = await import("./commands/validate.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "import": {
-			const mod = await import("./commands/import.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "sync": {
-			const mod = await import("./commands/sync.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "stats": {
-			const mod = await import("./commands/stats.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "prime": {
-			const mod = await import("./commands/prime.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		case "onboard": {
-			const mod = await import("./commands/onboard.ts");
-			await mod.default(rest, json);
-			break;
-		}
-		default: {
-			if (json) {
-				jsonOut({ success: false, error: `Unknown command: ${command}` });
-			} else {
-				errorOut(`Unknown command: ${command}\nRun "cn --help" for usage.`);
-			}
-			throw new ExitError(1);
-		}
-	}
-}
+program
+	.command("unpin")
+	.allowUnknownOption()
+	.allowExcessArguments()
+	.action(async () => {
+		const rawArgs = process.argv.slice(3);
+		const json = isJsonMode(rawArgs);
+		const mod = await import("./commands/pin.ts");
+		await mod.defaultUnpin(rawArgs, json);
+	});
 
-run().catch((err: unknown) => {
-	// ExitError: message already printed, just exit with the code
+program.parseAsync(process.argv).catch((err: unknown) => {
 	if (err instanceof ExitError) {
 		process.exit(err.exitCode);
 	}
 	const msg = err instanceof Error ? err.message : String(err);
+	const json = isJsonMode(process.argv.slice(2));
 	if (json) {
 		jsonOut({ success: false, error: msg });
 	} else {
@@ -146,52 +97,3 @@ run().catch((err: unknown) => {
 	}
 	process.exit(1);
 });
-
-function printHelp() {
-	console.log(`cn v${VERSION} — Git-native prompt management
-
-Usage: cn <command> [options]
-
-Prompt Commands:
-  init                   Initialize .canopy/ in current directory
-  create                 Create a new prompt
-  show <name>[@v]        Show prompt record
-  list                   List prompts
-  update <name>          Update a prompt (creates new version)
-  archive <name>         Archive a prompt
-  render <name>[@v]      Render full prompt (resolve inheritance)
-  tree <name>            Show inheritance tree
-  history <name>         Show version timeline
-  diff <name> <v1> <v2>  Section-aware diff between two versions
-  pin <name>@<version>   Pin prompt to a specific version
-  unpin <name>           Remove version pin
-
-Emit Commands:
-  emit <name>            Render and write prompt to a file
-  emit --all             Emit all active prompts
-  emit --check           Check if emitted files are up to date
-
-Schema Commands:
-  schema create          Create a validation schema
-  schema show <name>     Show schema details
-  schema list            List all schemas
-  schema rule add <name> Add a validation rule
-
-Validation:
-  validate <name>        Validate a prompt against its schema
-  validate --all         Validate all prompts with schemas
-
-Utility:
-  stats                  Show prompt statistics
-  sync                   Stage and commit .canopy/ changes
-  import <path>          Import an existing .md file
-
-Agent Integration:
-  prime                  Output workflow context for AI agents
-  onboard               Add canopy section to CLAUDE.md
-
-Global Options:
-  --json                 Output as JSON
-  --help                 Show this help
-  --version              Show version`);
-}
