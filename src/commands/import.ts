@@ -26,7 +26,7 @@ function splitMarkdown(content: string): Section[] {
 		if (headingMatch) {
 			flush();
 			const heading = headingMatch[1] ?? "";
-			currentName = heading.toLowerCase().replace(/\s+/g, "-");
+			currentName = heading;
 		} else {
 			currentLines.push(line);
 		}

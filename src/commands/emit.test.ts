@@ -129,9 +129,9 @@ describe("cn emit", () => {
 			await captureOutput(() => emitCmd(["imported-agent", "--out", outPath], false));
 
 			const content = await Bun.file(outPath).text();
-			expect(content).toContain("## role");
+			expect(content).toContain("## Role");
 			expect(content).toContain("You are a test agent.");
-			expect(content).toContain("## constraints");
+			expect(content).toContain("## Constraints");
 			expect(content).toContain("No misbehaving.");
 		} finally {
 			process.chdir(origCwd);
