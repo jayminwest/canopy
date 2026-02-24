@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-02-24
+
+### Added
+- Brand palette in `output.ts` (`palette.brand`, `palette.accent`, `palette.muted`) with deep green, amber, and stone gray colors
+- Status icons (`icons.pending`, `icons.active`, `icons.done`, `icons.blocked`) for terminal-compatible list indicators
+- Message format helpers (`fmt.success`, `fmt.error`, `fmt.warning`, `fmt.id`, `fmt.info`) for consistent CLI output
+- Style A custom help screen on `cn --help` with brand colors, structured command listing, and argument display
+
+### Changed
+- All 12 command files migrated from inline color calls to `fmt.*` / `icons.*` helpers for consistent visual output
+- `c.green` now maps to `palette.brand` (deep green) instead of plain chalk green
+- `c.yellow` now maps to `palette.accent` (amber) instead of plain chalk yellow
+
 ## [0.1.4] - 2026-02-24
 
 ### Added
