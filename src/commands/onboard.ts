@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { VERSION_MARKER, detectStatus, replaceMarkerSection, wrapInMarkers } from "../markers.ts";
+import type { Command } from "commander";
+import { detectStatus, replaceMarkerSection, VERSION_MARKER, wrapInMarkers } from "../markers.ts";
 import { humanOut, jsonOut } from "../output.ts";
 
 const CANDIDATE_FILES = ["CLAUDE.md", ".claude/CLAUDE.md", "AGENTS.md"] as const;
@@ -133,4 +134,19 @@ Options:
 	} else {
 		humanOut(`Added canopy section to ${filePath}`);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("onboard")
+		.description("Add canopy section to CLAUDE.md for AI agent discovery")
+		.option("--check", "Report status without writing (missing, current, outdated)")
+		.option("--stdout", "Print snippet to stdout without writing to file")
+		.action(async (opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = [];
+			if (opts.check) args.push("--check");
+			if (opts.stdout) args.push("--stdout");
+			await onboard(args, json);
+		});
 }

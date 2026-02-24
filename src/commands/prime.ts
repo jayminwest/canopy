@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { jsonOut } from "../output.ts";
 
 const PRIME_FILE = "PRIME.md";
@@ -155,4 +156,19 @@ Options:
 	} else {
 		process.stdout.write(content);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("prime")
+		.description("Output workflow context for AI agents")
+		.option("--compact", "Output minimal quick-reference")
+		.option("--export", "Output default template (ignores custom PRIME.md)")
+		.action(async (opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = [];
+			if (opts.compact) args.push("--compact");
+			if (opts.export) args.push("--export");
+			await prime(args, json);
+		});
 }

@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
@@ -148,4 +149,18 @@ Options:
 	}
 
 	if (!result.valid) throw new ExitError(1);
+}
+
+export function register(program: Command): void {
+	program
+		.command("validate [name]")
+		.description("Validate a prompt against its schema")
+		.option("--all", "Validate all prompts with schemas")
+		.action(async (name: string | undefined, opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = [];
+			if (name) args.push(name);
+			if (opts.all) args.push("--all");
+			await validate(args, json);
+		});
 }

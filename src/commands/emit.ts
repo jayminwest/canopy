@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
@@ -226,4 +227,28 @@ Options:
 	} else {
 		humanOut(`${c.green("✓")} ${prompt.name} → ${resolvedPath}`);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("emit [name]")
+		.description("Render and write prompt to a file")
+		.option("--all", "Emit all active prompts")
+		.option("--check", "Check if emitted files are up to date")
+		.option("--out <path>", "Custom output path (single prompt)")
+		.option("--out-dir <path>", "Custom output directory (--all mode)")
+		.option("--force", "Overwrite even if unchanged")
+		.option("--dry-run", "Show what would be emitted")
+		.action(async (name: string | undefined, opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = [];
+			if (name) args.push(name);
+			if (opts.all) args.push("--all");
+			if (opts.check) args.push("--check");
+			if (opts.out) args.push("--out", opts.out as string);
+			if (opts.outDir) args.push("--out-dir", opts.outDir as string);
+			if (opts.force) args.push("--force");
+			if (opts.dryRun) args.push("--dry-run");
+			await emit(args, json);
+		});
 }

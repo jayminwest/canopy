@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { Command } from "commander";
 import { c, errorOut, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -179,4 +180,52 @@ Options:
 	} finally {
 		releaseLock(promptsPath);
 	}
+}
+
+export function register(program: Command): void {
+	program
+		.command("update")
+		.description("Update a prompt (creates new version)")
+		.argument("<name>", "Prompt name")
+		.option("--name <name>", "Rename prompt")
+		.option("--description <text>", "Update description")
+		.option("--section <name>", "Section to update (use with --body or name=body shorthand)")
+		.option("--body <text>", "New body for the section specified by --section")
+		.option("--add-section <name>", "Add a new section")
+		.option("--remove-section <name>", "Remove a section (sets body to empty)")
+		.option(
+			"--tag <tag>",
+			"Add tag (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.option(
+			"--untag <tag>",
+			"Remove tag (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.option("--schema <name>", "Assign schema")
+		.option("--extends <name>", "Change parent prompt")
+		.option("--emit-as <filename>", "Custom emit filename")
+		.option("--status <status>", "Change status (draft|active|archived)")
+		.action(async (nameArg: string, opts) => {
+			const json: boolean = program.opts().json ?? false;
+			const args: string[] = [nameArg];
+			if (opts.name) args.push("--name", opts.name as string);
+			if (opts.description) args.push("--description", opts.description as string);
+			if (opts.section) {
+				args.push("--section", opts.section as string);
+				if (opts.body !== undefined) args.push("--body", opts.body as string);
+			}
+			if (opts.addSection) args.push("--add-section", opts.addSection as string);
+			if (opts.removeSection) args.push("--remove-section", opts.removeSection as string);
+			for (const tag of opts.tag as string[]) args.push("--tag", tag);
+			for (const tag of opts.untag as string[]) args.push("--untag", tag);
+			if (opts.schema) args.push("--schema", opts.schema as string);
+			if (opts.extends) args.push("--extends", opts.extends as string);
+			if (opts.emitAs) args.push("--emit-as", opts.emitAs as string);
+			if (opts.status) args.push("--status", opts.status as string);
+			await update(args, json);
+		});
 }
