@@ -21,8 +21,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org
 
       - run: npm install -g npm@latest
+
+      - name: Clear setup-node auth token for OIDC
+        run: npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
 
       - run: bun install
       - run: bun run lint
