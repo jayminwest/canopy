@@ -150,14 +150,22 @@ Options:
 			}
 		}
 
-		// Remove sections (empty body override)
+		// Remove sections
 		for (const removeName of removeSections) {
 			const idx = updated.sections.findIndex((s) => s.name === removeName);
-			if (idx !== -1) {
-				const existing = updated.sections[idx];
-				if (existing) updated.sections[idx] = { ...existing, body: "" };
+			if (updated.extends) {
+				// Inheriting prompt: use empty body to suppress inherited section in render
+				if (idx !== -1) {
+					const existing = updated.sections[idx];
+					if (existing) updated.sections[idx] = { ...existing, body: "" };
+				} else {
+					updated.sections.push({ name: removeName, body: "" });
+				}
 			} else {
-				updated.sections.push({ name: removeName, body: "" });
+				// Non-inheriting prompt: splice section out entirely
+				if (idx !== -1) {
+					updated.sections.splice(idx, 1);
+				}
 			}
 		}
 
