@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          node-auth-token: ""
+          registry-url: https://registry.npmjs.org
 
       - run: bun install
       - run: bun run lint
@@ -54,7 +54,7 @@ jobs:
 
       - name: Publish to npm
         if: steps.version-check.outputs.publish == 'true'
-        run: npm publish --provenance --access public
+        run: npm publish --access public
 
       - name: Tag release
         if: steps.version-check.outputs.publish == 'true'
