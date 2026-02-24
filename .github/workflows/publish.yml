@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -22,8 +21,6 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-
-      - run: npm install -g npm@latest
 
       - run: bun install
       - run: bun run lint
@@ -56,11 +53,9 @@ jobs:
 
       - name: Publish to npm
         if: steps.version-check.outputs.publish == 'true'
-        run: |
-          # Remove auth token from .npmrc and env so npm uses OIDC
-          sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
-          unset NODE_AUTH_TOKEN
-          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
       - name: Tag release
         if: steps.version-check.outputs.publish == 'true'
