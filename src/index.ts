@@ -53,14 +53,16 @@ registerPin(program); // registers both pin and unpin
 
 program.parseAsync(process.argv).catch((err: unknown) => {
 	if (err instanceof ExitError) {
-		process.exit(err.exitCode);
+		process.exitCode = err.exitCode;
+		return;
 	}
 	const msg = err instanceof Error ? err.message : String(err);
+	const command = process.argv[2] ?? "";
 	const json = isJsonMode(process.argv.slice(2));
 	if (json) {
-		jsonOut({ success: false, error: msg });
+		jsonOut({ success: false, command, error: msg });
 	} else {
 		errorOut(`Error: ${msg}`);
 	}
-	process.exit(1);
+	process.exitCode = 1;
 });
