@@ -17,9 +17,9 @@ Options:
   --description <text>       Update description
   --section <name> --body <text>  Update section body
   --section <name>=<text>         Update section (shorthand)
-  --add-section <name> --body <text>  Add new section with body
-  --add-section <name>=<text>        Add new section (shorthand)
-  --remove-section <name>    Remove section (empty body)
+  --add-section <name> --body <text>  Add new section with body (repeatable)
+  --add-section <name>=<text>        Add new section (shorthand, repeatable)
+  --remove-section <name>    Remove section (empty body, repeatable)
   --tag <tag>                Add tag (repeatable)
   --untag <tag>              Remove tag (repeatable)
   --schema <name>            Assign schema
@@ -43,9 +43,8 @@ Options:
 	// Parse flags
 	let sectionName: string | undefined;
 	let sectionBody: string | undefined;
-	let addSectionName: string | undefined;
-	let addSectionBody: string | undefined;
-	let removeSectionName: string | undefined;
+	const addSections: Array<{ name: string; body: string }> = [];
+	const removeSections: string[] = [];
 	const addTags: string[] = [];
 	const removeTags: string[] = [];
 	let newDescription: string | undefined;
@@ -75,18 +74,18 @@ Options:
 			const eqIdx = next.indexOf("=");
 			if (eqIdx !== -1) {
 				// --add-section name=body shorthand
-				addSectionName = next.slice(0, eqIdx);
-				addSectionBody = next.slice(eqIdx + 1);
+				addSections.push({ name: next.slice(0, eqIdx), body: next.slice(eqIdx + 1) });
 			} else {
-				addSectionName = next;
+				let body = "";
 				// lookahead for --body
 				if (args[i + 1] === "--body" && args[i + 2] !== undefined) {
 					i++; // skip --body
-					addSectionBody = args[++i];
+					body = args[++i] ?? "";
 				}
+				addSections.push({ name: next, body });
 			}
 		} else if (arg === "--remove-section" && args[i + 1]) {
-			removeSectionName = args[++i];
+			removeSections.push(args[++i] ?? "");
 		} else if (arg === "--tag" && args[i + 1]) {
 			addTags.push(args[++i] ?? "");
 		} else if (arg === "--untag" && args[i + 1]) {
@@ -140,26 +139,25 @@ Options:
 			}
 		}
 
-		// Add new section
-		if (addSectionName !== undefined) {
-			const body = addSectionBody ?? "";
-			const existingIdx = updated.sections.findIndex((s) => s.name === addSectionName);
+		// Add new sections
+		for (const { name: addName, body: addBody } of addSections) {
+			const existingIdx = updated.sections.findIndex((s) => s.name === addName);
 			if (existingIdx !== -1) {
 				const existingSec = updated.sections[existingIdx];
-				if (existingSec) updated.sections[existingIdx] = { ...existingSec, body };
+				if (existingSec) updated.sections[existingIdx] = { ...existingSec, body: addBody };
 			} else {
-				updated.sections.push({ name: addSectionName, body });
+				updated.sections.push({ name: addName, body: addBody });
 			}
 		}
 
-		// Remove section (empty body override)
-		if (removeSectionName !== undefined) {
-			const idx = updated.sections.findIndex((s) => s.name === removeSectionName);
+		// Remove sections (empty body override)
+		for (const removeName of removeSections) {
+			const idx = updated.sections.findIndex((s) => s.name === removeName);
 			if (idx !== -1) {
 				const existing = updated.sections[idx];
 				if (existing) updated.sections[idx] = { ...existing, body: "" };
 			} else {
-				updated.sections.push({ name: removeSectionName, body: "" });
+				updated.sections.push({ name: removeName, body: "" });
 			}
 		}
 
@@ -205,8 +203,18 @@ export function register(program: Command): void {
 		.option("--description <text>", "Update description")
 		.option("--section <name>", "Section to update (use with --body or name=body shorthand)")
 		.option("--body <text>", "New body for the section specified by --section")
-		.option("--add-section <name>", "Add a new section (use with --body or name=body shorthand)")
-		.option("--remove-section <name>", "Remove a section (sets body to empty)")
+		.option(
+			"--add-section <name>",
+			"Add a new section (use name=body shorthand, repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.option(
+			"--remove-section <name>",
+			"Remove a section (sets body to empty, repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
 		.option(
 			"--tag <tag>",
 			"Add tag (repeatable)",
@@ -232,11 +240,8 @@ export function register(program: Command): void {
 				args.push("--section", opts.section as string);
 				if (opts.body !== undefined) args.push("--body", opts.body as string);
 			}
-			if (opts.addSection) {
-				args.push("--add-section", opts.addSection as string);
-				if (!opts.section && opts.body !== undefined) args.push("--body", opts.body as string);
-			}
-			if (opts.removeSection) args.push("--remove-section", opts.removeSection as string);
+			for (const sec of opts.addSection as string[]) args.push("--add-section", sec);
+			for (const sec of opts.removeSection as string[]) args.push("--remove-section", sec);
 			for (const tag of opts.tag as string[]) args.push("--tag", tag);
 			for (const tag of opts.untag as string[]) args.push("--untag", tag);
 			if (opts.schema) args.push("--schema", opts.schema as string);
