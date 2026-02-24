@@ -3,7 +3,7 @@ import { Command } from "commander";
 import { errorOut, isJsonMode, jsonOut } from "./output.ts";
 import { ExitError } from "./types.ts";
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.1.3";
 
 const program = new Command();
 program

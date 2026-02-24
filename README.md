@@ -5,7 +5,7 @@
 [![Bun](https://img.shields.io/badge/Bun-%E2%89%A51.0-orange)](https://bun.sh)
 [![GitHub release](https://img.shields.io/github/v/release/jayminwest/canopy)](https://github.com/jayminwest/canopy/releases)
 
-Git-native prompt management for AI agent workflows. Zero dependencies, JSONL storage, Bun runtime.
+Git-native prompt management for AI agent workflows. Minimal dependencies, JSONL storage, Bun runtime.
 
 Agents accumulate dozens of prompt files that share 60%+ identical content. Canopy fixes this: prompts are composed via sections and inheritance, versioned automatically, validated against schemas, and emitted to plain `.md` for downstream consumption. No duplication, no drift.
 
@@ -95,6 +95,13 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | `cn validate <name>` | Validate a prompt against its schema |
 | `cn validate --all` | Validate all prompts with schemas |
 
+### AI Agent Integration
+
+| Command | Description |
+|---------|-------------|
+| `cn prime` | Output workflow context for AI agents (`--compact`, `--export`) |
+| `cn onboard` | Add canopy section to CLAUDE.md (`--check`, `--stdout`) |
+
 ### Utility
 
 | Command | Description |
@@ -139,7 +146,7 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 ## Design Principles
 
 - **JSONL is the database** — No binary files, no export pipeline
-- **Zero dependencies** — Bun built-ins only
+- **Minimal dependencies** — chalk + commander only
 - **Concurrent-safe** — Advisory locks + atomic writes
 - **Git-native** — `merge=union` handles parallel merges, dedup on read
 - **Prompts are composed** — Inheritance eliminates duplication
@@ -148,7 +155,7 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 ## Development
 
 ```bash
-# Run tests (62 tests across 10 files)
+# Run tests (83 tests across 12 files)
 bun test
 
 # Lint + format check
@@ -190,7 +197,8 @@ canopy/
     output.ts              JSON/human output formatting
     yaml.ts                Minimal YAML parser
     id.ts                  ID generation
-    commands/              One file per CLI subcommand (17 commands)
+    markers.ts             Marker-based section management for CLAUDE.md
+    commands/              One file per CLI subcommand (20 commands)
   scripts/
     version-bump.ts        Atomic version management
   .canopy/                 On-disk data store

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-02-24
+
+### Added
+- `cn prime` command — outputs workflow context for AI agent sessions (`--compact`, `--export`, custom `PRIME.md` support)
+- `cn onboard` command — adds canopy section to CLAUDE.md for AI agent discovery (`--check`, `--stdout`)
+- `src/markers.ts` — marker-based section management for CLAUDE.md onboarding (start/end markers, version detection, replace)
+- `chalk` dependency for colorized terminal output with automatic `NO_COLOR` and TTY detection
+- `commander` dependency for structured CLI argument parsing
+- AGENTS.md file for multi-agent coordination context
+
+### Changed
+- Migrated entire CLI from custom arg-parsing router to Commander register pattern — each command exports `register(program)`
+- `src/index.ts` rewritten: Commander-based entry point with typed options, replaces manual `switch` dispatch
+- `src/output.ts` now uses chalk for color helpers (`c.bold`, `c.dim`, `c.green`, `c.red`, `c.yellow`, `c.cyan`, `c.blue`)
+- No longer zero-dependency — chalk and commander are now runtime dependencies
+- CLAUDE.md updated with canopy onboarding section
+
+### Fixed
+- `--body` support wired into `--add-section` for `cn update` command (body was declared but never assigned)
+- `cn import` now preserves original section heading casing (was lowercasing)
+- `Record<string, unknown>` type annotations added to Commander action `opts` params (fixes TypeScript strict mode)
+
+### Removed
+- `.beads/` directory and all bead-related configuration
+
 ## [0.1.2] - 2026-02-23
 
 ### Added
