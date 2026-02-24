@@ -52,7 +52,7 @@ Initializes .canopy/ in the current directory with config and empty JSONL stores
 		existing = "";
 	}
 
-	if (!existing.includes("merge=union")) {
+	if (!existing.includes(".canopy/prompts.jsonl")) {
 		await Bun.write(gitattrsPath, existing + gitattrsEntry);
 	}
 

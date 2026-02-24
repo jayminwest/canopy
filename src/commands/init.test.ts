@@ -81,7 +81,27 @@ describe("cn init", () => {
 		try {
 			await captureOutput(() => init([], false));
 			const gitattrs = await Bun.file(join(tmpDir, ".gitattributes")).text();
-			expect(gitattrs).toContain("merge=union");
+			expect(gitattrs).toContain(".canopy/prompts.jsonl merge=union");
+			expect(gitattrs).toContain(".canopy/schemas.jsonl merge=union");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("still appends canopy entries when another tool's merge=union is already present", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+
+		try {
+			// Simulate seeds or mulch having already added merge=union for their own files
+			await Bun.write(
+				join(tmpDir, ".gitattributes"),
+				".seeds/issues.jsonl merge=union\n.mulch/records.jsonl merge=union\n",
+			);
+			await captureOutput(() => init([], false));
+			const gitattrs = await Bun.file(join(tmpDir, ".gitattributes")).text();
+			expect(gitattrs).toContain(".canopy/prompts.jsonl merge=union");
+			expect(gitattrs).toContain(".canopy/schemas.jsonl merge=union");
 		} finally {
 			process.chdir(origCwd);
 		}
