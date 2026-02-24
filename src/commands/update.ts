@@ -17,7 +17,8 @@ Options:
   --description <text>       Update description
   --section <name> --body <text>  Update section body
   --section <name>=<text>         Update section (shorthand)
-  --add-section <name>       Add new section
+  --add-section <name> --body <text>  Add new section with body
+  --add-section <name>=<text>        Add new section (shorthand)
   --remove-section <name>    Remove section (empty body)
   --tag <tag>                Add tag (repeatable)
   --untag <tag>              Remove tag (repeatable)
@@ -70,7 +71,20 @@ Options:
 			// body may be empty string
 			sectionBody = args[++i];
 		} else if (arg === "--add-section" && args[i + 1]) {
-			addSectionName = args[++i];
+			const next = args[++i] ?? "";
+			const eqIdx = next.indexOf("=");
+			if (eqIdx !== -1) {
+				// --add-section name=body shorthand
+				addSectionName = next.slice(0, eqIdx);
+				addSectionBody = next.slice(eqIdx + 1);
+			} else {
+				addSectionName = next;
+				// lookahead for --body
+				if (args[i + 1] === "--body" && args[i + 2] !== undefined) {
+					i++; // skip --body
+					addSectionBody = args[++i];
+				}
+			}
 		} else if (arg === "--remove-section" && args[i + 1]) {
 			removeSectionName = args[++i];
 		} else if (arg === "--tag" && args[i + 1]) {
@@ -128,7 +142,7 @@ Options:
 
 		// Add new section
 		if (addSectionName !== undefined) {
-			const body = addSectionBody ?? sectionBody ?? "";
+			const body = addSectionBody ?? "";
 			const existingIdx = updated.sections.findIndex((s) => s.name === addSectionName);
 			if (existingIdx !== -1) {
 				const existingSec = updated.sections[existingIdx];
@@ -191,7 +205,7 @@ export function register(program: Command): void {
 		.option("--description <text>", "Update description")
 		.option("--section <name>", "Section to update (use with --body or name=body shorthand)")
 		.option("--body <text>", "New body for the section specified by --section")
-		.option("--add-section <name>", "Add a new section")
+		.option("--add-section <name>", "Add a new section (use with --body or name=body shorthand)")
 		.option("--remove-section <name>", "Remove a section (sets body to empty)")
 		.option(
 			"--tag <tag>",
@@ -218,7 +232,10 @@ export function register(program: Command): void {
 				args.push("--section", opts.section as string);
 				if (opts.body !== undefined) args.push("--body", opts.body as string);
 			}
-			if (opts.addSection) args.push("--add-section", opts.addSection as string);
+			if (opts.addSection) {
+				args.push("--add-section", opts.addSection as string);
+				if (!opts.section && opts.body !== undefined) args.push("--body", opts.body as string);
+			}
 			if (opts.removeSection) args.push("--remove-section", opts.removeSection as string);
 			for (const tag of opts.tag as string[]) args.push("--tag", tag);
 			for (const tag of opts.untag as string[]) args.push("--untag", tag);
