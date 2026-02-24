@@ -112,6 +112,16 @@ async function run() {
 			await mod.default(rest, json);
 			break;
 		}
+		case "prime": {
+			const mod = await import("./commands/prime.ts");
+			await mod.default(rest, json);
+			break;
+		}
+		case "onboard": {
+			const mod = await import("./commands/onboard.ts");
+			await mod.default(rest, json);
+			break;
+		}
 		default: {
 			if (json) {
 				jsonOut({ success: false, error: `Unknown command: ${command}` });
@@ -175,6 +185,10 @@ Utility:
   stats                  Show prompt statistics
   sync                   Stage and commit .canopy/ changes
   import <path>          Import an existing .md file
+
+Agent Integration:
+  prime                  Output workflow context for AI agents
+  onboard               Add canopy section to CLAUDE.md
 
 Global Options:
   --json                 Output as JSON
