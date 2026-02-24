@@ -25,9 +25,6 @@ jobs:
 
       - run: npm install -g npm@latest
 
-      - name: Clear setup-node auth token for OIDC
-        run: npm config delete //registry.npmjs.org/:_authToken 2>/dev/null || true
-
       - run: bun install
       - run: bun run lint
       - run: bun run typecheck
@@ -59,7 +56,11 @@ jobs:
 
       - name: Publish to npm
         if: steps.version-check.outputs.publish == 'true'
-        run: npm publish --provenance --access public
+        run: |
+          # Remove auth token from .npmrc and env so npm uses OIDC
+          sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+          unset NODE_AUTH_TOKEN
+          npm publish --provenance --access public
 
       - name: Tag release
         if: steps.version-check.outputs.publish == 'true'
