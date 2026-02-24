@@ -183,7 +183,7 @@ export function register(program: Command): void {
 			(v: string, a: string[]) => a.concat([v]),
 			[] as string[],
 		)
-		.action(async (opts) => {
+		.action(async (opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = ["--name", opts.name as string];
 			if (opts.description) args.push("--description", opts.description as string);

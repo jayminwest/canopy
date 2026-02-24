@@ -142,7 +142,7 @@ export function register(program: Command): void {
 		.description("Add canopy section to CLAUDE.md for AI agent discovery")
 		.option("--check", "Report status without writing (missing, current, outdated)")
 		.option("--stdout", "Print snippet to stdout without writing to file")
-		.action(async (opts) => {
+		.action(async (opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [];
 			if (opts.check) args.push("--check");

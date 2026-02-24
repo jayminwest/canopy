@@ -156,7 +156,7 @@ export function register(program: Command): void {
 		.command("validate [name]")
 		.description("Validate a prompt against its schema")
 		.option("--all", "Validate all prompts with schemas")
-		.action(async (name: string | undefined, opts) => {
+		.action(async (name: string | undefined, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [];
 			if (name) args.push(name);

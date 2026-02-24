@@ -239,7 +239,7 @@ export function register(program: Command): void {
 		.option("--out-dir <path>", "Custom output directory (--all mode)")
 		.option("--force", "Overwrite even if unchanged")
 		.option("--dry-run", "Show what would be emitted")
-		.action(async (name: string | undefined, opts) => {
+		.action(async (name: string | undefined, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [];
 			if (name) args.push(name);

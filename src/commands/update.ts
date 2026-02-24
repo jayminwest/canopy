@@ -209,7 +209,7 @@ export function register(program: Command): void {
 		.option("--extends <name>", "Change parent prompt")
 		.option("--emit-as <filename>", "Custom emit filename")
 		.option("--status <status>", "Change status (draft|active|archived)")
-		.action(async (nameArg: string, opts) => {
+		.action(async (nameArg: string, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [nameArg];
 			if (opts.name) args.push("--name", opts.name as string);

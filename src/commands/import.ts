@@ -175,7 +175,7 @@ export function register(program: Command): void {
 			(v: string, a: string[]) => a.concat([v]),
 			[] as string[],
 		)
-		.action(async (filePath: string, opts) => {
+		.action(async (filePath: string, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [filePath, "--name", opts.name as string];
 			if (!opts.split) args.push("--no-split");

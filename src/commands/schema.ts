@@ -301,7 +301,7 @@ export function register(program: Command): void {
 			(v: string, a: string[]) => a.concat([v]),
 			[] as string[],
 		)
-		.action(async (opts) => {
+		.action(async (opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = ["--name", opts.name as string];
 			for (const r of opts.required as string[]) args.push("--required", r);
@@ -335,7 +335,7 @@ export function register(program: Command): void {
 		.requiredOption("--section <name>", "Section to validate")
 		.requiredOption("--pattern <regex>", "Regex pattern that must match")
 		.requiredOption("--message <text>", "Error message if validation fails")
-		.action(async (schemaName: string, opts) => {
+		.action(async (schemaName: string, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			await schemaRuleAdd(
 				[

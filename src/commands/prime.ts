@@ -164,7 +164,7 @@ export function register(program: Command): void {
 		.description("Output workflow context for AI agents")
 		.option("--compact", "Output minimal quick-reference")
 		.option("--export", "Output default template (ignores custom PRIME.md)")
-		.action(async (opts) => {
+		.action(async (opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [];
 			if (opts.compact) args.push("--compact");
