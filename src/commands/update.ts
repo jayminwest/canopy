@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -195,7 +195,7 @@ Options:
 				version: updated.version,
 			});
 		} else {
-			humanOut(`${c.green("✓")} Updated ${c.bold(updated.name)} → v${updated.version}`);
+			humanOut(`${fmt.success("Updated")} ${c.bold(updated.name)} → v${updated.version}`);
 		}
 	} finally {
 		releaseLock(promptsPath);

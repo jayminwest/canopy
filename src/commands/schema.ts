@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import type { Command } from "commander";
 import { generateId } from "../id.ts";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupByIdLast, readJsonl, releaseLock } from "../store.ts";
 import type { Schema, ValidationRule } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -126,7 +126,7 @@ async function schemaCreate(args: string[], json: boolean): Promise<void> {
 		if (json) {
 			jsonOut({ success: true, command: "schema create", id, name });
 		} else {
-			humanOut(`${c.green("✓")} Created schema ${c.bold(name)} (${id})`);
+			humanOut(`${fmt.success("Created schema")} ${c.bold(name)} ${fmt.id(id)}`);
 		}
 	} finally {
 		releaseLock(schemasPath);
@@ -273,7 +273,7 @@ async function schemaRuleAdd(args: string[], json: boolean): Promise<void> {
 		if (json) {
 			jsonOut({ success: true, command: "schema rule add", schema: schemaName, rule });
 		} else {
-			humanOut(`${c.green("✓")} Added rule to ${c.bold(schemaName)}: /${pattern}/ on "${section}"`);
+			humanOut(fmt.success(`Added rule to ${c.bold(schemaName)}: /${pattern}/ on "${section}"`));
 		}
 	} finally {
 		releaseLock(schemasPath);

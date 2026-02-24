@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -67,7 +67,7 @@ Options:
 		if (json) {
 			jsonOut({ success: true, command: "archive", id: updated.id, name: updated.name });
 		} else {
-			humanOut(`${c.yellow("✓")} Archived prompt ${c.bold(name)}`);
+			humanOut(`${fmt.success("Archived prompt")} ${c.bold(name)}`);
 		}
 	} finally {
 		releaseLock(promptsPath);

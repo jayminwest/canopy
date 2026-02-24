@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, humanOut, icons, jsonOut } from "../output.ts";
 import { readJsonl } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -122,7 +122,7 @@ Options:
 				? c.green("+")
 				: change.type === "removed"
 					? c.red("-")
-					: c.yellow("~");
+					: icons.blocked;
 		humanOut(`  ${icon} ${change.section} (${change.type})`);
 
 		if (change.type === "modified") {

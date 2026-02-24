@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
@@ -133,9 +133,9 @@ Options:
 				});
 			} else {
 				if (stale.length === 0) {
-					humanOut(c.green("✓ All emitted files are up to date"));
+					humanOut(fmt.success("All emitted files are up to date"));
 				} else {
-					humanOut(c.red(`✗ ${stale.length} stale file(s):`));
+					humanOut(fmt.error(`${stale.length} stale file(s)`));
 					for (const name of stale) {
 						humanOut(`  - ${name}`);
 					}
@@ -225,7 +225,7 @@ Options:
 			files: [{ name: prompt.name, path: resolvedPath, version: result.version }],
 		});
 	} else {
-		humanOut(`${c.green("✓")} ${prompt.name} → ${resolvedPath}`);
+		humanOut(fmt.success(`${prompt.name} → ${resolvedPath}`));
 	}
 }
 

@@ -16,11 +16,12 @@ export function isJsonMode(args: string[]): boolean {
 	return args.includes("--json");
 }
 
-// Brand palette (chalk handles NO_COLOR and TTY detection automatically)
+// Brand palette — chalk instances (supports chaining e.g. palette.brand.bold(...))
+// chalk handles NO_COLOR and TTY detection automatically
 export const palette = {
-	brand: (s: string) => chalk.rgb(56, 142, 60)(s), // Canopy deep green
-	accent: (s: string) => chalk.rgb(255, 183, 77)(s), // amber — IDs and accents
-	muted: (s: string) => chalk.rgb(120, 120, 110)(s), // stone gray — metadata
+	brand: chalk.rgb(56, 142, 60), // Canopy deep green
+	accent: chalk.rgb(255, 183, 77), // amber — IDs and accents
+	muted: chalk.rgb(120, 120, 110), // stone gray — metadata
 };
 
 // Color helpers
@@ -32,4 +33,33 @@ export const c = {
 	yellow: (s: string) => palette.accent(s),
 	cyan: (s: string) => chalk.cyan(s),
 	blue: (s: string) => chalk.blue(s),
+};
+
+// Status icons: Set D (minimal, maximum terminal compatibility)
+// Use these for list status indicators, not message prefixes
+export const icons = {
+	pending: chalk.green("-"), // open / pending
+	active: chalk.cyan(">"), // in_progress / active
+	done: chalk.dim("x"), // closed / done
+	blocked: chalk.yellow("!"), // blocked / warning
+};
+
+// Message format helpers per visual-spec.md
+export const fmt = {
+	// brand bold ✓ + brand message text
+	success: (msg: string) => `${palette.brand.bold("✓")} ${palette.brand(msg)}`,
+	// highlight an ID or reference in accent (amber)
+	id: (id: string) => palette.accent(id),
+	// yellow bold ! + yellow message + optional dim hint
+	warning: (msg: string, hint?: string) =>
+		hint
+			? `${chalk.yellow.bold("!")} ${chalk.yellow(msg)} ${chalk.dim(hint)}`
+			: `${chalk.yellow.bold("!")} ${chalk.yellow(msg)}`,
+	// red bold ✗ + red message + optional dim hint
+	error: (msg: string, hint?: string) =>
+		hint
+			? `${chalk.red.bold("✗")} ${chalk.red(msg)} ${chalk.dim(hint)}`
+			: `${chalk.red.bold("✗")} ${chalk.red(msg)}`,
+	// dim indented info/hint text
+	info: (msg: string) => chalk.dim(`  ${msg}`),
 };

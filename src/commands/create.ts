@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
 import { generateId } from "../id.ts";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -154,7 +154,7 @@ Options:
 		if (json) {
 			jsonOut({ success: true, command: "create", id, name });
 		} else {
-			humanOut(`${c.green("✓")} Created prompt ${c.bold(name)} (${id})`);
+			humanOut(`${fmt.success("Created prompt")} ${c.bold(name)} ${fmt.id(id)}`);
 		}
 	} finally {
 		releaseLock(promptsPath);

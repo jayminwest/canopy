@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
 import { generateId } from "../id.ts";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt, Section } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -154,7 +154,7 @@ Options:
 			});
 		} else {
 			humanOut(
-				`${c.green("✓")} Imported ${c.bold(name)} (${id}) with ${sections.length} section(s)`,
+				`${fmt.success("Imported")} ${c.bold(name)} ${fmt.id(id)} with ${sections.length} section(s)`,
 			);
 		}
 	} finally {

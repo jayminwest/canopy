@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -134,14 +134,14 @@ Options:
 		});
 	} else {
 		if (result.valid) {
-			humanOut(`${c.green("✓")} ${name} is valid`);
+			humanOut(fmt.success(`${name} is valid`));
 			if (result.warnings.length > 0) {
 				for (const w of result.warnings) {
-					humanOut(`  ${c.yellow("warn")}: ${w}`);
+					humanOut(fmt.warning(w));
 				}
 			}
 		} else {
-			humanOut(`${c.red("✗")} ${name} is invalid`);
+			humanOut(fmt.error(`${name} is invalid`));
 			for (const err of result.errors) {
 				humanOut(`  ${c.red("error")}: [${err.section}] ${err.message}`);
 			}

@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, humanOut, icons, jsonOut } from "../output.ts";
 import { dedupById, getVersions, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -60,7 +60,7 @@ Options:
 
 	for (const v of versions) {
 		const isCurrent = v.version === prompt.version;
-		const marker = isCurrent ? c.green(" ◀ current") : "";
+		const marker = isCurrent ? ` ${icons.active} current` : "";
 		const pinned = v.pinned !== undefined ? c.yellow(` (pinned @${v.pinned})`) : "";
 		humanOut(`  ${c.bold(`v${v.version}`)}${marker}${pinned}  ${c.dim(v.updatedAt)}`);
 		humanOut(`    sections: ${v.sections.map((s) => s.name).join(", ") || c.dim("(none)")}`);

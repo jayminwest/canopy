@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
 import type { Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
@@ -88,7 +88,7 @@ Options:
 		if (json) {
 			jsonOut({ success: true, command: "pin", name, pinned: version });
 		} else {
-			humanOut(`${c.green("✓")} Pinned ${c.bold(name)} to v${version}`);
+			humanOut(`${fmt.success("Pinned")} ${c.bold(name)} to v${version}`);
 		}
 	} finally {
 		releaseLock(promptsPath);
@@ -144,7 +144,7 @@ Options:
 		if (json) {
 			jsonOut({ success: true, command: "unpin", name });
 		} else {
-			humanOut(`${c.green("✓")} Unpinned ${c.bold(name)}`);
+			humanOut(`${fmt.success("Unpinned")} ${c.bold(name)}`);
 		}
 	} finally {
 		releaseLock(promptsPath);

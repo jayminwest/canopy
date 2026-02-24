@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { c, errorOut, humanOut, jsonOut } from "../output.ts";
+import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { ExitError } from "../types.ts";
 
 export default async function sync(args: string[], json: boolean): Promise<void> {
@@ -44,9 +44,9 @@ Options:
 			});
 		} else {
 			if (changedFiles.length === 0) {
-				humanOut(c.green("✓ .canopy/ is clean (no uncommitted changes)"));
+				humanOut(fmt.success(".canopy/ is clean (no uncommitted changes)"));
 			} else {
-				humanOut(c.yellow(`${changedFiles.length} uncommitted file(s):`));
+				humanOut(fmt.warning(`${changedFiles.length} uncommitted file(s)`));
 				for (const f of changedFiles) {
 					humanOut(`  ${f}`);
 				}
@@ -93,7 +93,7 @@ Options:
 	if (json) {
 		jsonOut({ success: true, command: "sync", committed: true, files: changedFiles, message: msg });
 	} else {
-		humanOut(`${c.green("✓")} Committed ${changedFiles.length} file(s): ${msg}`);
+		humanOut(fmt.success(`Committed ${changedFiles.length} file(s): ${msg}`));
 	}
 }
 
