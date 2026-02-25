@@ -54,6 +54,36 @@ async function addSections(
 	await appendJsonl(promptsPath, updated);
 }
 
+async function setFrontmatter(tmpDir: string, name: string, frontmatter: Record<string, unknown>) {
+	const promptsPath = join(tmpDir, ".canopy", "prompts.jsonl");
+	const records = await readJsonl<Prompt>(promptsPath);
+	const current = dedupById(records);
+	const prompt = current.find((p) => p.name === name);
+	if (!prompt) throw new Error(`Prompt '${name}' not found`);
+	const updated: Prompt = {
+		...prompt,
+		frontmatter,
+		version: prompt.version + 1,
+		updatedAt: new Date().toISOString(),
+	};
+	await appendJsonl(promptsPath, updated);
+}
+
+async function setExtends(tmpDir: string, name: string, extendsName: string) {
+	const promptsPath = join(tmpDir, ".canopy", "prompts.jsonl");
+	const records = await readJsonl<Prompt>(promptsPath);
+	const current = dedupById(records);
+	const prompt = current.find((p) => p.name === name);
+	if (!prompt) throw new Error(`Prompt '${name}' not found`);
+	const updated: Prompt = {
+		...prompt,
+		extends: extendsName,
+		version: prompt.version + 1,
+		updatedAt: new Date().toISOString(),
+	};
+	await appendJsonl(promptsPath, updated);
+}
+
 beforeEach(async () => {
 	mkdirSync(tmpDir, { recursive: true });
 	const origCwd = process.cwd();
@@ -82,6 +112,8 @@ describe("cn emit", () => {
 			expect(parsed.files).toHaveLength(1);
 
 			const content = await Bun.file(join(tmpDir, "out.md")).text();
+			expect(content).toContain("---");
+			expect(content).toContain("name: my-agent");
 			expect(content).toContain("## role");
 			expect(content).toContain("You are an agent.");
 		} finally {
@@ -152,6 +184,93 @@ describe("cn emit", () => {
 			const parsed = JSON.parse(stdout.trim());
 			expect(parsed.success).toBe(true);
 			expect(parsed.sections).toBe(1);
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("emits custom frontmatter keys", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() => create(["--name", "fm-agent", "--status", "active"], false));
+			await addSections(tmpDir, "fm-agent", [{ name: "role", body: "FM agent." }]);
+			await setFrontmatter(tmpDir, "fm-agent", { model: "sonnet", readOnly: true });
+
+			const outPath = join(tmpDir, "fm-agent.md");
+			await captureOutput(() => emitCmd(["fm-agent", "--out", outPath], false));
+
+			const content = await Bun.file(outPath).text();
+			expect(content).toContain("name: fm-agent");
+			expect(content).toContain("model: sonnet");
+			expect(content).toContain("readOnly: true");
+			expect(content).toContain("## role");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("emits merged frontmatter from inherited prompts", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() => create(["--name", "base-agent", "--status", "active"], false));
+			await addSections(tmpDir, "base-agent", [{ name: "role", body: "Base role." }]);
+			await setFrontmatter(tmpDir, "base-agent", { model: "opus" });
+
+			await captureOutput(() => create(["--name", "child-agent", "--status", "active"], false));
+			await setExtends(tmpDir, "child-agent", "base-agent");
+			await setFrontmatter(tmpDir, "child-agent", { tools: ["Read", "Write"] });
+
+			const outPath = join(tmpDir, "child-agent.md");
+			await captureOutput(() => emitCmd(["child-agent", "--out", outPath], false));
+
+			const content = await Bun.file(outPath).text();
+			// name from prompt itself
+			expect(content).toContain("name: child-agent");
+			// model inherited from parent
+			expect(content).toContain("model: opus");
+			// tools from child
+			expect(content).toContain("tools:");
+			expect(content).toContain("- Read");
+			expect(content).toContain("- Write");
+			// sections from parent
+			expect(content).toContain("## role");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("check mode detects stale when frontmatter changes", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() => create(["--name", "stale-check", "--status", "active"], false));
+			await addSections(tmpDir, "stale-check", [{ name: "role", body: "Role." }]);
+
+			const outPath = join(tmpDir, "agents", "stale-check.md");
+
+			// Emit without frontmatter
+			await captureOutput(() => emitCmd(["--all", "--out-dir", join(tmpDir, "agents")], false));
+
+			// Add frontmatter — should make the existing file stale
+			await setFrontmatter(tmpDir, "stale-check", { model: "haiku" });
+
+			const { stdout } = await captureOutput(() =>
+				emitCmd(["--all", "--out-dir", join(tmpDir, "agents"), "--check", "--json"], true).catch(
+					() => {},
+				),
+			);
+			const parsed = JSON.parse(stdout.trim());
+			expect(parsed.upToDate).toBe(false);
+			expect(parsed.stale).toContain("stale-check");
+
+			// Re-emit to fix
+			await captureOutput(() =>
+				emitCmd(["--all", "--out-dir", join(tmpDir, "agents"), "--force"], false),
+			);
+			const content = await Bun.file(outPath).text();
+			expect(content).toContain("model: haiku");
 		} finally {
 			process.chdir(origCwd);
 		}

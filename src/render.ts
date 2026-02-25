@@ -3,6 +3,7 @@ import { MAX_INHERIT_DEPTH } from "./types.ts";
 
 export interface RenderResult {
 	sections: Section[];
+	frontmatter: Record<string, unknown>;
 	resolvedFrom: string[];
 	version: number;
 }
@@ -46,6 +47,7 @@ function resolveInner(
 		const sections = prompt.sections.filter((s) => s.body !== "");
 		return {
 			sections,
+			frontmatter: prompt.frontmatter ?? {},
 			resolvedFrom: [name],
 			version: prompt.version,
 		};
@@ -59,6 +61,7 @@ function resolveInner(
 
 	return {
 		sections: merged,
+		frontmatter: { ...parentResult.frontmatter, ...(prompt.frontmatter ?? {}) },
 		resolvedFrom: [...parentResult.resolvedFrom, name],
 		version: prompt.version,
 	};
