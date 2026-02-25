@@ -16,6 +16,10 @@ if ((rawArgs.includes("-v") || rawArgs.includes("--version")) && rawArgs.include
 	console.log(
 		JSON.stringify({ name: "@os-eco/canopy-cli", version: VERSION, runtime: "bun", platform }),
 	);
+	if (rawArgs.includes("--timing")) {
+		const elapsed = Math.round(performance.now() - t0);
+		process.stderr.write(`[timing] ${elapsed}ms\n`);
+	}
 	process.exit();
 }
 
@@ -155,13 +159,23 @@ function suggestCommand(input: string): string | undefined {
 
 program.on("command:*", (operands) => {
 	const unknown = operands[0] ?? "";
-	process.stderr.write(`Unknown command: ${unknown}\n`);
+	const json = isJsonMode(rawArgs);
 	const suggestion = suggestCommand(unknown);
-	if (suggestion) {
-		process.stderr.write(`Did you mean '${suggestion}'?\n`);
+	if (json) {
+		jsonOut({
+			success: false,
+			command: unknown,
+			error: `Unknown command: ${unknown}`,
+			suggestion: suggestion ?? undefined,
+		});
+	} else {
+		process.stderr.write(`Unknown command: ${unknown}\n`);
+		if (suggestion) {
+			process.stderr.write(`Did you mean '${suggestion}'?\n`);
+		}
+		process.stderr.write("Run 'cn --help' for usage.\n");
 	}
-	process.stderr.write("Run 'cn --help' for usage.\n");
-	process.exit(1);
+	process.exitCode = 1;
 });
 
 program

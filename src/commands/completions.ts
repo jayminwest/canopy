@@ -5,6 +5,8 @@
  */
 
 import { Command } from "commander";
+import { errorOut, jsonOut } from "../output.ts";
+import { ExitError } from "../types.ts";
 
 interface FlagDef {
 	name: string;
@@ -556,18 +558,23 @@ export function createCompletionsCommand(): Command {
 	return new Command("completions")
 		.description("Generate shell completions")
 		.argument("<shell>", "Shell to generate completions for (bash, zsh, fish)")
-		.action((shell: string) => {
-			completionsCommand([shell]);
+		.option("--json", "Output as JSON")
+		.action((shell: string, opts: { json?: boolean }) => {
+			completionsCommand([shell], opts.json ?? false);
 		});
 }
 
-export function completionsCommand(args: string[]): void {
+export function completionsCommand(args: string[], json = false): void {
 	const shell = args[0];
 
 	if (!shell) {
-		process.stderr.write("Error: missing shell argument\n");
-		process.stderr.write("Usage: cn completions <bash|zsh|fish>\n");
-		process.exit(1);
+		if (json) {
+			jsonOut({ success: false, command: "completions", error: "Missing shell argument" });
+		} else {
+			errorOut("Error: missing shell argument");
+			process.stderr.write("Usage: cn completions <bash|zsh|fish>\n");
+		}
+		throw new ExitError(1);
 	}
 
 	let script: string;
@@ -582,9 +589,18 @@ export function completionsCommand(args: string[]): void {
 			script = generateFish();
 			break;
 		default:
-			process.stderr.write(`Error: unknown shell '${shell}'\n`);
-			process.stderr.write("Supported shells: bash, zsh, fish\n");
-			process.exit(1);
+			if (json) {
+				jsonOut({
+					success: false,
+					command: "completions",
+					error: `Unknown shell: ${shell}`,
+					supported: ["bash", "zsh", "fish"],
+				});
+			} else {
+				errorOut(`Error: unknown shell '${shell}'`);
+				process.stderr.write("Supported shells: bash, zsh, fish\n");
+			}
+			throw new ExitError(1);
 	}
 
 	process.stdout.write(script);
