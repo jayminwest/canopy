@@ -1,23 +1,36 @@
 # Canopy
 
-[![CI](https://img.shields.io/github/actions/workflow/status/jayminwest/canopy/ci.yml?branch=main)](https://github.com/jayminwest/canopy/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Bun](https://img.shields.io/badge/Bun-%E2%89%A51.0-orange)](https://bun.sh)
-[![GitHub release](https://img.shields.io/github/v/release/jayminwest/canopy)](https://github.com/jayminwest/canopy/releases)
+Git-native prompt management for AI agent workflows.
 
-Git-native prompt management for AI agent workflows. Minimal dependencies, JSONL storage, Bun runtime.
+[![npm](https://img.shields.io/npm/v/@os-eco/canopy-cli)](https://www.npmjs.com/package/@os-eco/canopy-cli)
+[![CI](https://github.com/jayminwest/canopy/actions/workflows/ci.yml/badge.svg)](https://github.com/jayminwest/canopy/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Agents accumulate dozens of prompt files that share 60%+ identical content. Canopy fixes this: prompts are composed via sections and inheritance, versioned automatically, validated against schemas, and emitted to plain `.md` for downstream consumption. No duplication, no drift.
 
 ## Install
 
 ```bash
-# Clone the repository
+bun install -g @os-eco/canopy-cli
+```
+
+Or try without installing:
+
+```bash
+npx @os-eco/canopy-cli --help
+```
+
+### Development
+
+```bash
 git clone https://github.com/jayminwest/canopy.git
 cd canopy
+bun install
+bun link              # Makes 'cn' available globally
 
-# Link the CLI globally
-bun link
+bun test              # Run all tests
+bun run lint          # Biome check
+bun run typecheck     # tsc --noEmit
 ```
 
 ## Quick Start
@@ -33,31 +46,9 @@ cn render reviewer                               # Resolve inheritance, output s
 cn emit --all                                    # Write all prompts to agents/*.md
 ```
 
-## How It Works
+## Commands
 
-```
-1. cn init                → Creates .canopy/ with JSONL files and config
-2. cn create / cn update  → Prompts stored as versioned JSONL records
-3. cn render              → Inheritance resolved, sections composed
-4. cn emit                → Plain .md files written for agent consumption
-5. git push               → Teammates get the same prompts, diffable in PRs
-```
-
-Prompts are **composed, not duplicated**. A child prompt inherits all sections from its parent and can override, append, or remove individual sections. Up to 5 levels deep with circular reference detection.
-
-## What's in `.canopy/`
-
-```
-.canopy/
-├── config.yaml          # Project config (project name, version, emitDir, emitDirByTag)
-├── prompts.jsonl        # All prompt records with full version history
-├── schemas.jsonl        # Validation schema definitions
-└── .gitignore           # Ignores *.lock files
-```
-
-Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattribute), and append-friendly.
-
-## CLI Reference
+Every command supports `--json` for structured output. Global flags: `-v`/`--version`, `-q`/`--quiet`, `--verbose`, `--timing`. ANSI colors respect `NO_COLOR`.
 
 ### Prompt Commands
 
@@ -95,7 +86,7 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | `cn validate <name>` | Validate a prompt against its schema |
 | `cn validate --all` | Validate all prompts with schemas |
 
-### AI Agent Integration
+### Agent Integration
 
 | Command | Description |
 |---------|-------------|
@@ -111,18 +102,35 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | `cn sync` | Stage and commit `.canopy/` changes (`--status`) |
 | `cn doctor` | Check project health and data integrity (`--fix`, `--verbose`) |
 | `cn upgrade` | Upgrade canopy to the latest npm version (`--check`) |
-| `cn completions <shell>` | Generate shell completions (`bash`, `zsh`, `fish`) |
+| `cn completions <shell>` | Generate shell completions (bash, zsh, fish) |
 
-### Global Options
+## Architecture
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Structured JSON output (all commands) |
-| `-q`, `--quiet` | Suppress non-error output |
-| `--verbose` | Extra diagnostic output |
-| `--timing` | Show command execution time |
-| `--help`, `-h` | Show help |
-| `--version`, `-v` | Show version |
+Canopy stores prompts as versioned JSONL records in `.canopy/prompts.jsonl`, with validation schemas in `schemas.jsonl` and project config in `config.yaml`. Prompts are composed via single inheritance — a child inherits all sections from its parent and can override, append, or remove individual sections (up to 5 levels deep with circular reference detection). The `cn emit` pipeline renders resolved prompts to plain `.md` files for downstream agent consumption. Advisory file locks and atomic writes ensure concurrent-safe access. See [CLAUDE.md](CLAUDE.md) for full technical details.
+
+## How It Works
+
+```
+1. cn init                → Creates .canopy/ with JSONL files and config
+2. cn create / cn update  → Prompts stored as versioned JSONL records
+3. cn render              → Inheritance resolved, sections composed
+4. cn emit                → Plain .md files written for agent consumption
+5. git push               → Teammates get the same prompts, diffable in PRs
+```
+
+Prompts are **composed, not duplicated**. A child prompt inherits all sections from its parent and can override, append, or remove individual sections. Up to 5 levels deep with circular reference detection.
+
+## What's in `.canopy/`
+
+```
+.canopy/
+├── config.yaml          # Project config (project name, version, emitDir, emitDirByTag)
+├── prompts.jsonl        # All prompt records with full version history
+├── schemas.jsonl        # Validation schema definitions
+└── .gitignore           # Ignores *.lock files
+```
+
+Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattribute), and append-friendly.
 
 ## Composition Model
 
@@ -158,37 +166,6 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 - **Prompts are composed** — Inheritance eliminates duplication
 - **Emit to plain files** — Canopy is source of truth, tools consume `.md`
 
-## Development
-
-```bash
-# Run tests (204 tests across 21 files)
-bun test
-
-# Lint + format check
-bun run lint
-
-# Type check
-bun run typecheck
-
-# All quality gates
-bun test && bun run lint && bun run typecheck
-```
-
-### Versioning
-
-Version is maintained in two places that must stay in sync:
-
-1. `package.json` — `"version"` field
-2. `src/index.ts` — `VERSION` constant
-
-Use the bump script to update both:
-
-```bash
-bun run version:bump <major|minor|patch>
-```
-
-Version bumps pushed to `main` trigger the publish workflow: npm publish with provenance, git tag, and GitHub release.
-
 ## Project Structure
 
 ```
@@ -209,6 +186,17 @@ canopy/
     version-bump.ts        Atomic version management
   .canopy/                 On-disk data store
   .github/workflows/       CI + npm publish
+```
+
+## Part of os-eco
+
+Canopy is part of the [os-eco](https://github.com/jayminwest/os-eco) AI agent tooling ecosystem.
+
+```
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  overstory   orchestration
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  canopy      prompts
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  seeds       issues
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  mulch       expertise
 ```
 
 ## Contributing
