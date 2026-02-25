@@ -25,6 +25,7 @@ Options:
   --schema <name>            Assign schema
   --extends <name>           Change parent
   --emit-as <filename>       Custom emit filename
+  --emit-dir <path>          Custom emit directory
   --status draft|active|archived  Change status
   --json                     Output as JSON`);
 		return;
@@ -51,6 +52,7 @@ Options:
 	let newSchema: string | undefined;
 	let newExtends: string | undefined;
 	let newEmitAs: string | undefined;
+	let newEmitDir: string | undefined;
 	let newStatus: string | undefined;
 	let newName: string | undefined;
 
@@ -98,6 +100,8 @@ Options:
 			newExtends = args[++i];
 		} else if (arg === "--emit-as" && args[i + 1]) {
 			newEmitAs = args[++i];
+		} else if (arg === "--emit-dir" && args[i + 1]) {
+			newEmitDir = args[++i];
 		} else if (arg === "--status" && args[i + 1]) {
 			newStatus = args[++i];
 		} else if (arg === "--name" && args[i + 1]) {
@@ -179,6 +183,7 @@ Options:
 		if (newSchema !== undefined) updated.schema = newSchema;
 		if (newExtends !== undefined) updated.extends = newExtends;
 		if (newEmitAs !== undefined) updated.emitAs = newEmitAs;
+		if (newEmitDir !== undefined) updated.emitDir = newEmitDir;
 		if (newStatus === "draft" || newStatus === "active" || newStatus === "archived") {
 			updated.status = newStatus;
 		}
@@ -238,6 +243,7 @@ export function register(program: Command): void {
 		.option("--schema <name>", "Assign schema")
 		.option("--extends <name>", "Change parent prompt")
 		.option("--emit-as <filename>", "Custom emit filename")
+		.option("--emit-dir <path>", "Custom emit directory")
 		.option("--status <status>", "Change status (draft|active|archived)")
 		.action(async (nameArg: string, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
@@ -255,6 +261,7 @@ export function register(program: Command): void {
 			if (opts.schema) args.push("--schema", opts.schema as string);
 			if (opts.extends) args.push("--extends", opts.extends as string);
 			if (opts.emitAs) args.push("--emit-as", opts.emitAs as string);
+			if (opts.emitDir) args.push("--emit-dir", opts.emitDir as string);
 			if (opts.status) args.push("--status", opts.status as string);
 			await update(args, json);
 		});

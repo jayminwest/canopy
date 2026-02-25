@@ -14,6 +14,7 @@ export interface Prompt {
 	tags?: string[];
 	schema?: string;
 	emitAs?: string;
+	emitDir?: string;
 	pinned?: number;
 	status: "draft" | "active" | "archived";
 	createdAt: string;
@@ -40,6 +41,7 @@ export interface Config {
 	project: string;
 	version: string;
 	emitDir?: string;
+	emitDirByTag?: Record<string, string>;
 }
 
 /**

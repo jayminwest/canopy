@@ -9,6 +9,7 @@ import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
 import { LOCK_STALE_MS } from "../types.ts";
 import { validatePrompt } from "../validate.ts";
+import { resolveEmitDir } from "./emit.ts";
 
 interface DoctorCheck {
 	name: string;
@@ -291,8 +292,6 @@ async function checkEmitStaleness(canopyDir: string): Promise<DoctorCheck> {
 
 	const cwd = canopyDir.replace(/\/.canopy$/, "");
 	const config = await loadConfig(cwd);
-	const emitDir = config.emitDir ?? "agents";
-	const resolvedEmitDir = join(cwd, emitDir);
 
 	const allRecords = await readJsonl<Prompt>(promptsPath);
 	const prompts = dedupById(allRecords);
@@ -311,7 +310,8 @@ async function checkEmitStaleness(canopyDir: string): Promise<DoctorCheck> {
 	const details: string[] = [];
 	for (const p of activePrompts) {
 		const filename = p.emitAs ?? `${p.name}.md`;
-		const outPath = join(resolvedEmitDir, filename);
+		const promptEmitDir = resolveEmitDir(p, config);
+		const outPath = join(cwd, promptEmitDir, filename);
 		if (!existsSync(outPath)) {
 			details.push(`${p.name}: emitted file missing (${filename})`);
 			continue;

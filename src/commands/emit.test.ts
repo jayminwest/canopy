@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { saveConfig } from "../config.ts";
 import { appendJsonl, dedupById, readJsonl } from "../store.ts";
 import type { Prompt } from "../types.ts";
 import create from "./create.ts";
-import emitCmd from "./emit.ts";
+import emitCmd, { resolveEmitDir } from "./emit.ts";
 import importCmd from "./import.ts";
 import init from "./init.ts";
 
@@ -151,6 +152,210 @@ describe("cn emit", () => {
 			const parsed = JSON.parse(stdout.trim());
 			expect(parsed.success).toBe(true);
 			expect(parsed.sections).toBe(1);
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+});
+
+describe("resolveEmitDir", () => {
+	const basePrompt: Prompt = {
+		id: "test-001",
+		name: "test",
+		version: 1,
+		sections: [],
+		status: "active",
+		createdAt: "2026-01-01T00:00:00Z",
+		updatedAt: "2026-01-01T00:00:00Z",
+	};
+
+	const baseConfig = { project: "test", version: "1" };
+
+	it("falls back to global emitDir", () => {
+		const dir = resolveEmitDir(basePrompt, { ...baseConfig, emitDir: "output" });
+		expect(dir).toBe("output");
+	});
+
+	it("falls back to 'agents' when no config emitDir", () => {
+		const dir = resolveEmitDir(basePrompt, baseConfig);
+		expect(dir).toBe("agents");
+	});
+
+	it("per-prompt emitDir wins over tag-based routing", () => {
+		const prompt = { ...basePrompt, emitDir: "custom", tags: ["slash-command"] };
+		const config = { ...baseConfig, emitDirByTag: { "slash-command": ".claude/commands" } };
+		expect(resolveEmitDir(prompt, config)).toBe("custom");
+	});
+
+	it("tag-based routing works", () => {
+		const prompt = { ...basePrompt, tags: ["slash-command"] };
+		const config = { ...baseConfig, emitDirByTag: { "slash-command": ".claude/commands" } };
+		expect(resolveEmitDir(prompt, config)).toBe(".claude/commands");
+	});
+
+	it("first matching tag wins", () => {
+		const prompt = { ...basePrompt, tags: ["internal", "slash-command"] };
+		const config = {
+			...baseConfig,
+			emitDirByTag: { "slash-command": ".claude/commands", internal: ".internal/prompts" },
+		};
+		expect(resolveEmitDir(prompt, config)).toBe(".internal/prompts");
+	});
+
+	it("no matching tags falls back to global emitDir", () => {
+		const prompt = { ...basePrompt, tags: ["unrelated"] };
+		const config = {
+			...baseConfig,
+			emitDir: "output",
+			emitDirByTag: { "slash-command": ".claude/commands" },
+		};
+		expect(resolveEmitDir(prompt, config)).toBe("output");
+	});
+});
+
+describe("cn emit routing integration", () => {
+	it("tag-based routing routes prompts to different directories", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			// Create prompts with different tags
+			await captureOutput(() =>
+				create(["--name", "my-cmd", "--tag", "slash-command", "--status", "active"], false),
+			);
+			await captureOutput(() =>
+				create(["--name", "my-agent", "--tag", "agent", "--status", "active"], false),
+			);
+			await addSections(tmpDir, "my-cmd", [{ name: "role", body: "Command" }]);
+			await addSections(tmpDir, "my-agent", [{ name: "role", body: "Agent" }]);
+
+			// Configure tag routing
+			await saveConfig(tmpDir, {
+				project: "test",
+				version: "1",
+				emitDir: "agents",
+				emitDirByTag: {
+					"slash-command": ".claude/commands",
+					agent: "agents",
+				},
+			});
+
+			// Emit all
+			const { stdout } = await captureOutput(() => emitCmd(["--all", "--json"], true));
+			const parsed = JSON.parse(stdout.trim());
+			expect(parsed.success).toBe(true);
+			expect(parsed.files).toHaveLength(2);
+
+			// Verify files landed in correct directories
+			expect(existsSync(join(tmpDir, ".claude/commands/my-cmd.md"))).toBe(true);
+			expect(existsSync(join(tmpDir, "agents/my-agent.md"))).toBe(true);
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("per-prompt emitDir override routes to correct directory", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() =>
+				create(["--name", "special", "--emit-dir", "custom-dir", "--status", "active"], false),
+			);
+			await addSections(tmpDir, "special", [{ name: "role", body: "Special" }]);
+
+			const { stdout } = await captureOutput(() => emitCmd(["--all", "--json"], true));
+			const parsed = JSON.parse(stdout.trim());
+			expect(parsed.success).toBe(true);
+
+			expect(existsSync(join(tmpDir, "custom-dir/special.md"))).toBe(true);
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("--out-dir overrides all routing", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() =>
+				create(["--name", "routed", "--tag", "slash-command", "--status", "active"], false),
+			);
+			await addSections(tmpDir, "routed", [{ name: "role", body: "Routed" }]);
+
+			await saveConfig(tmpDir, {
+				project: "test",
+				version: "1",
+				emitDirByTag: { "slash-command": ".claude/commands" },
+			});
+
+			const overrideDir = join(tmpDir, "override");
+			const { stdout } = await captureOutput(() =>
+				emitCmd(["--all", "--out-dir", overrideDir, "--json"], true),
+			);
+			const parsed = JSON.parse(stdout.trim());
+			expect(parsed.success).toBe(true);
+
+			// File should be in override dir, not .claude/commands
+			expect(existsSync(join(overrideDir, "routed.md"))).toBe(true);
+			expect(existsSync(join(tmpDir, ".claude/commands/routed.md"))).toBe(false);
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("--dry-run shows routed paths", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() =>
+				create(["--name", "cmd-a", "--tag", "slash-command", "--status", "active"], false),
+			);
+			await captureOutput(() =>
+				create(["--name", "agent-a", "--tag", "agent", "--status", "active"], false),
+			);
+
+			await saveConfig(tmpDir, {
+				project: "test",
+				version: "1",
+				emitDir: "agents",
+				emitDirByTag: { "slash-command": ".claude/commands" },
+			});
+
+			const { stdout } = await captureOutput(() => emitCmd(["--all", "--dry-run", "--json"], true));
+			const parsed = JSON.parse(stdout.trim());
+			expect(parsed.dryRun).toBe(true);
+
+			const cmdFile = parsed.files.find((f: { name: string }) => f.name === "cmd-a");
+			const agentFile = parsed.files.find((f: { name: string }) => f.name === "agent-a");
+			expect(cmdFile.path).toContain(".claude/commands");
+			expect(agentFile.path).toContain("agents");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("--check respects routing", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() =>
+				create(["--name", "cmd-check", "--tag", "slash-command", "--status", "active"], false),
+			);
+			await addSections(tmpDir, "cmd-check", [{ name: "role", body: "Check me" }]);
+
+			await saveConfig(tmpDir, {
+				project: "test",
+				version: "1",
+				emitDirByTag: { "slash-command": ".claude/commands" },
+			});
+
+			// First emit to the correct routed path
+			await captureOutput(() => emitCmd(["--all"], false));
+			expect(existsSync(join(tmpDir, ".claude/commands/cmd-check.md"))).toBe(true);
+
+			// Check should pass (files are where routing says they should be)
+			const { stdout } = await captureOutput(() => emitCmd(["--all", "--check", "--json"], true));
+			const parsed = JSON.parse(stdout.trim());
+			expect(parsed.upToDate).toBe(true);
 		} finally {
 			process.chdir(origCwd);
 		}

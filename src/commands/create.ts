@@ -21,6 +21,7 @@ Options:
   --tag <tag>             Add tag (repeatable)
   --schema <name>         Assign validation schema
   --emit-as <filename>    Custom emit filename
+  --emit-dir <path>       Custom emit directory
   --status draft|active   Initial status (default: active)
   --section <name> --body <text>  Add section
   --section <name>=<text>         Add section (shorthand)
@@ -35,6 +36,7 @@ Options:
 	const tags: string[] = [];
 	let schema: string | undefined;
 	let emitAs: string | undefined;
+	let emitDir: string | undefined;
 	let status: "draft" | "active" = "active";
 	const sections: Section[] = [];
 
@@ -52,6 +54,8 @@ Options:
 			schema = args[++i];
 		} else if (arg === "--emit-as" && args[i + 1]) {
 			emitAs = args[++i];
+		} else if (arg === "--emit-dir" && args[i + 1]) {
+			emitDir = args[++i];
 		} else if (arg === "--status" && args[i + 1]) {
 			const s = args[++i];
 			if (s === "draft" || s === "active") {
@@ -148,6 +152,7 @@ Options:
 		if (tags.length > 0) prompt.tags = tags;
 		if (schema) prompt.schema = schema;
 		if (emitAs) prompt.emitAs = emitAs;
+		if (emitDir) prompt.emitDir = emitDir;
 
 		await appendJsonl(promptsPath, prompt);
 
@@ -176,6 +181,7 @@ export function register(program: Command): void {
 		)
 		.option("--schema <name>", "Assign validation schema")
 		.option("--emit-as <filename>", "Custom emit filename")
+		.option("--emit-dir <path>", "Custom emit directory")
 		.option("--status <status>", "Initial status (draft|active)", "active")
 		.option(
 			"--section <name=body>",
@@ -191,6 +197,7 @@ export function register(program: Command): void {
 			for (const tag of opts.tag as string[]) args.push("--tag", tag);
 			if (opts.schema) args.push("--schema", opts.schema as string);
 			if (opts.emitAs) args.push("--emit-as", opts.emitAs as string);
+			if (opts.emitDir) args.push("--emit-dir", opts.emitDir as string);
 			if (opts.status) args.push("--status", opts.status as string);
 			for (const section of opts.section as string[]) args.push("--section", section);
 			await create(args, json);

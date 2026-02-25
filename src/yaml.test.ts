@@ -33,6 +33,47 @@ describe("parseYaml", () => {
 		const result = parseYaml(`msg: "line1\\nline2"`);
 		expect(result.msg).toBe("line1\nline2");
 	});
+
+	it("parses a nested map", () => {
+		const text =
+			"emitDirByTag:\n  slash-command: .claude/commands\n  internal: .internal/prompts\n";
+		const result = parseYaml(text);
+		expect(result.emitDirByTag).toEqual({
+			"slash-command": ".claude/commands",
+			internal: ".internal/prompts",
+		});
+	});
+
+	it("parses mixed flat and nested keys", () => {
+		const text =
+			"project: overstory\nversion: 1\nemitDir: agents\nemitDirByTag:\n  slash-command: .claude/commands\n  internal: .internal/prompts\n";
+		const result = parseYaml(text);
+		expect(result.project).toBe("overstory");
+		expect(result.version).toBe("1");
+		expect(result.emitDir).toBe("agents");
+		expect(result.emitDirByTag).toEqual({
+			"slash-command": ".claude/commands",
+			internal: ".internal/prompts",
+		});
+	});
+
+	it("handles empty nested key (no children)", () => {
+		const text = "project: test\nemitDirByTag:\nversion: 1\n";
+		const result = parseYaml(text);
+		// emitDirByTag has no indented children, so it's an empty string
+		expect(result.emitDirByTag).toBe("");
+		expect(result.project).toBe("test");
+		expect(result.version).toBe("1");
+	});
+
+	it("handles quoted values in nested maps", () => {
+		const text = "emitDirByTag:\n  command: \".claude/commands\"\n  path: 'my path'\n";
+		const result = parseYaml(text);
+		expect(result.emitDirByTag).toEqual({
+			command: ".claude/commands",
+			path: "my path",
+		});
+	});
 });
 
 describe("serializeYaml", () => {
@@ -57,5 +98,44 @@ describe("serializeYaml", () => {
 		expect(parsed.project).toBe("my-project");
 		expect(parsed.version).toBe("1");
 		expect(parsed.emitDir).toBe("agents");
+	});
+
+	it("serializes nested maps", () => {
+		const obj = {
+			project: "test",
+			emitDirByTag: { "slash-command": ".claude/commands", internal: ".internal/prompts" },
+		};
+		const result = serializeYaml(obj);
+		expect(result).toContain("emitDirByTag:");
+		expect(result).toContain("  slash-command: .claude/commands");
+		expect(result).toContain("  internal: .internal/prompts");
+	});
+
+	it("round-trips nested maps", () => {
+		const original = {
+			project: "overstory",
+			version: "1",
+			emitDir: "agents",
+			emitDirByTag: { "slash-command": ".claude/commands", internal: ".internal/prompts" },
+		};
+		const serialized = serializeYaml(original);
+		const parsed = parseYaml(serialized);
+		expect(parsed.project).toBe("overstory");
+		expect(parsed.version).toBe("1");
+		expect(parsed.emitDir).toBe("agents");
+		expect(parsed.emitDirByTag).toEqual({
+			"slash-command": ".claude/commands",
+			internal: ".internal/prompts",
+		});
+	});
+
+	it("quotes nested values that need quoting", () => {
+		const obj = {
+			emitDirByTag: { command: "path with: colon" },
+		};
+		const serialized = serializeYaml(obj);
+		expect(serialized).toContain('"path with: colon"');
+		const parsed = parseYaml(serialized);
+		expect(parsed.emitDirByTag).toEqual({ command: "path with: colon" });
 	});
 });

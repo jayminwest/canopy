@@ -5,7 +5,7 @@ import { loadConfig } from "../config.ts";
 import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, readJsonl } from "../store.ts";
-import type { Prompt } from "../types.ts";
+import type { Config, Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
 
 function sectionsToMarkdown(sections: { name: string; body: string }[]): string {
@@ -14,6 +14,17 @@ function sectionsToMarkdown(sections: { name: string; body: string }[]): string 
 		parts.push(`## ${section.name}\n\n${section.body}`);
 	}
 	return `${parts.join("\n\n")}\n`;
+}
+
+export function resolveEmitDir(prompt: Prompt, config: Config): string {
+	if (prompt.emitDir) return prompt.emitDir;
+	if (config.emitDirByTag && prompt.tags) {
+		for (const tag of prompt.tags) {
+			const dir = config.emitDirByTag[tag];
+			if (dir) return dir;
+		}
+	}
+	return config.emitDir ?? "agents";
 }
 
 async function emitPrompt(
@@ -70,13 +81,12 @@ Options:
 	const allRecords = await readJsonl<Prompt>(promptsPath);
 	const current = dedupById(allRecords);
 
-	// Get output directory
+	// Get output directory override (applies to all prompts when set)
 	let outDir: string | undefined;
 	const outDirIdx = args.indexOf("--out-dir");
 	if (outDirIdx !== -1 && args[outDirIdx + 1]) {
 		outDir = args[outDirIdx + 1];
 	}
-	const resolvedOutDir = outDir ?? config.emitDir ?? "agents";
 
 	if (allMode) {
 		const activePrompts = current.filter((p) => p.status === "active");
@@ -89,14 +99,19 @@ Options:
 					dryRun: true,
 					files: activePrompts.map((p) => ({
 						name: p.name,
-						path: join(resolvedOutDir, p.emitAs ?? `${p.name}.md`),
+						path: join(outDir ?? resolveEmitDir(p, config), p.emitAs ?? `${p.name}.md`),
 						version: p.version,
 					})),
 				});
 			} else {
-				humanOut(`Would emit ${activePrompts.length} prompts to ${resolvedOutDir}/`);
+				if (outDir) {
+					humanOut(`Would emit ${activePrompts.length} prompts to ${outDir}/`);
+				} else {
+					humanOut(`Would emit ${activePrompts.length} prompts:`);
+				}
 				for (const p of activePrompts) {
-					humanOut(`  ${p.name} → ${p.emitAs ?? `${p.name}.md`}`);
+					const dir = outDir ?? resolveEmitDir(p, config);
+					humanOut(`  ${p.name} → ${join(dir, p.emitAs ?? `${p.name}.md`)}`);
 				}
 			}
 			return;
@@ -106,7 +121,8 @@ Options:
 			const stale: string[] = [];
 			for (const p of activePrompts) {
 				const filename = p.emitAs ?? `${p.name}.md`;
-				const outPath = join(resolvedOutDir, filename);
+				const promptOutDir = outDir ?? resolveEmitDir(p, config);
+				const outPath = join(promptOutDir, filename);
 				const result = resolvePrompt(p.name, allRecords, p.pinned);
 				const expected = sectionsToMarkdown(result.sections);
 
@@ -148,7 +164,7 @@ Options:
 
 		const results = [];
 		for (const p of activePrompts) {
-			const r = await emitPrompt(p, resolvedOutDir, allRecords, force);
+			const r = await emitPrompt(p, outDir ?? resolveEmitDir(p, config), allRecords, force);
 			results.push(r);
 		}
 
@@ -192,7 +208,8 @@ Options:
 	}
 
 	const filename = prompt.emitAs ?? `${prompt.name}.md`;
-	const resolvedPath = outPath ?? join(resolvedOutDir, filename);
+	const singleOutDir = outDir ?? resolveEmitDir(prompt, config);
+	const resolvedPath = outPath ?? join(singleOutDir, filename);
 
 	if (!force && existsSync(resolvedPath)) {
 		const result = resolvePrompt(prompt.name, allRecords, prompt.pinned);
