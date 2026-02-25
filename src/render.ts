@@ -103,10 +103,3 @@ function mergeSections(parentSections: Section[], childSections: Section[]): Sec
 
 	return result;
 }
-
-function mergeFrontmatter(
-	parent: Record<string, unknown>,
-	child: Record<string, unknown>,
-): Record<string, unknown> {
-	return { ...parent, ...child };
-}
