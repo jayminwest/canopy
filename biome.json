@@ -22,7 +22,6 @@
 			"!**/.seeds",
 			"!**/.mulch",
 			"!**/.overstory",
-			"!**/.beads",
 			"!**/.claude"
 		]
 	}
