@@ -26,6 +26,8 @@ Options:
   --extends <name>           Change parent
   --emit-as <filename>       Custom emit filename
   --emit-dir <path>          Custom emit directory
+  --fm <key=value>           Set frontmatter field (repeatable)
+  --remove-fm <key>          Remove frontmatter field (repeatable)
   --status draft|active|archived  Change status
   --json                     Output as JSON`);
 		return;
@@ -55,6 +57,8 @@ Options:
 	let newEmitDir: string | undefined;
 	let newStatus: string | undefined;
 	let newName: string | undefined;
+	const fmUpdates: Record<string, string> = {};
+	const fmRemovals: string[] = [];
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -106,6 +110,14 @@ Options:
 			newStatus = args[++i];
 		} else if (arg === "--name" && args[i + 1]) {
 			newName = args[++i];
+		} else if (arg === "--fm" && args[i + 1]) {
+			const fmArg = args[++i] ?? "";
+			const eqIdx = fmArg.indexOf("=");
+			if (eqIdx !== -1) {
+				fmUpdates[fmArg.slice(0, eqIdx)] = fmArg.slice(eqIdx + 1);
+			}
+		} else if (arg === "--remove-fm" && args[i + 1]) {
+			fmRemovals.push(args[++i] ?? "");
 		}
 	}
 
@@ -179,6 +191,12 @@ Options:
 		for (const t of removeTags) currentTags.delete(t);
 		updated.tags = currentTags.size > 0 ? Array.from(currentTags) : undefined;
 
+		// Frontmatter updates
+		const currentFm = { ...(updated.frontmatter ?? {}) };
+		for (const [k, v] of Object.entries(fmUpdates)) currentFm[k] = v;
+		for (const k of fmRemovals) delete currentFm[k];
+		updated.frontmatter = Object.keys(currentFm).length > 0 ? currentFm : undefined;
+
 		if (newDescription !== undefined) updated.description = newDescription;
 		if (newSchema !== undefined) updated.schema = newSchema;
 		if (newExtends !== undefined) updated.extends = newExtends;
@@ -245,6 +263,18 @@ export function register(program: Command): void {
 		.option("--emit-as <filename>", "Custom emit filename")
 		.option("--emit-dir <path>", "Custom emit directory")
 		.option("--status <status>", "Change status (draft|active|archived)")
+		.option(
+			"--fm <key=value>",
+			"Set frontmatter field (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
+		.option(
+			"--remove-fm <key>",
+			"Remove frontmatter field (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
 		.action(async (nameArg: string, opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [nameArg];
@@ -263,6 +293,8 @@ export function register(program: Command): void {
 			if (opts.emitAs) args.push("--emit-as", opts.emitAs as string);
 			if (opts.emitDir) args.push("--emit-dir", opts.emitDir as string);
 			if (opts.status) args.push("--status", opts.status as string);
+			for (const fm of opts.fm as string[]) args.push("--fm", fm);
+			for (const key of opts.removeFm as string[]) args.push("--remove-fm", key);
 			await update(args, json);
 		});
 }

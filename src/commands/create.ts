@@ -25,6 +25,7 @@ Options:
   --status draft|active   Initial status (default: active)
   --section <name> --body <text>  Add section
   --section <name>=<text>         Add section (shorthand)
+  --fm <key=value>        Set frontmatter field (repeatable)
   --json                  Output as JSON`);
 		return;
 	}
@@ -39,6 +40,7 @@ Options:
 	let emitDir: string | undefined;
 	let status: "draft" | "active" = "active";
 	const sections: Section[] = [];
+	const frontmatterEntries: Record<string, string> = {};
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -79,6 +81,14 @@ Options:
 				} else {
 					sections.push({ name: sName, body: "" });
 				}
+			}
+		} else if (arg === "--fm" && args[i + 1]) {
+			const fmArg = args[++i] ?? "";
+			const eqIdx = fmArg.indexOf("=");
+			if (eqIdx !== -1) {
+				const fmKey = fmArg.slice(0, eqIdx);
+				const fmValue = fmArg.slice(eqIdx + 1);
+				if (fmKey) frontmatterEntries[fmKey] = fmValue;
 			}
 		}
 	}
@@ -153,6 +163,7 @@ Options:
 		if (schema) prompt.schema = schema;
 		if (emitAs) prompt.emitAs = emitAs;
 		if (emitDir) prompt.emitDir = emitDir;
+		if (Object.keys(frontmatterEntries).length > 0) prompt.frontmatter = frontmatterEntries;
 
 		await appendJsonl(promptsPath, prompt);
 
@@ -189,6 +200,12 @@ export function register(program: Command): void {
 			(v: string, a: string[]) => a.concat([v]),
 			[] as string[],
 		)
+		.option(
+			"--fm <key=value>",
+			"Set frontmatter field (repeatable)",
+			(v: string, a: string[]) => a.concat([v]),
+			[] as string[],
+		)
 		.action(async (opts: Record<string, unknown>) => {
 			const json: boolean = program.opts().json ?? false;
 			const args: string[] = ["--name", opts.name as string];
@@ -200,6 +217,7 @@ export function register(program: Command): void {
 			if (opts.emitDir) args.push("--emit-dir", opts.emitDir as string);
 			if (opts.status) args.push("--status", opts.status as string);
 			for (const section of opts.section as string[]) args.push("--section", section);
+			for (const fm of opts.fm as string[]) args.push("--fm", fm);
 			await create(args, json);
 		});
 }
