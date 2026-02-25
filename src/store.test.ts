@@ -130,3 +130,65 @@ describe("acquireLock / releaseLock", () => {
 		releaseLock(path);
 	});
 });
+
+describe("concurrent lock access", () => {
+	it("serializes parallel writes via lock", async () => {
+		const path = join(tmpDir, "counter.jsonl");
+		await writeJsonl(path, [{ id: "c1", version: 1, count: 0 }]);
+
+		// 5 concurrent increment operations — without serialization, count would be wrong
+		const increments = Array.from({ length: 5 }, () =>
+			(async () => {
+				await acquireLock(path);
+				try {
+					const records = await readJsonl<{ id: string; version: number; count: number }>(path);
+					const current = records[0]?.count ?? 0;
+					await Bun.sleep(5); // small delay to increase race chance without lock
+					await writeJsonl(path, [{ id: "c1", version: 1, count: current + 1 }]);
+				} finally {
+					releaseLock(path);
+				}
+			})(),
+		);
+
+		await Promise.all(increments);
+
+		const result = await readJsonl<{ id: string; version: number; count: number }>(path);
+		expect(result[0]?.count).toBe(5);
+	});
+
+	it("cleans up stale lock and acquires successfully", async () => {
+		const path = join(tmpDir, "stale.jsonl");
+		const lock = `${path}.lock`;
+
+		// Create a stale lock file (older than the 30s LOCK_STALE_MS threshold)
+		await Bun.write(lock, "");
+		const { utimes } = await import("node:fs/promises");
+		const staleTime = new Date(Date.now() - 31_000);
+		await utimes(lock, staleTime, staleTime);
+
+		// Should remove the stale lock and acquire successfully
+		await acquireLock(path);
+		releaseLock(path);
+	});
+
+	it("throws timeout error when lock is held", async () => {
+		const path = join(tmpDir, "locked.jsonl");
+		const lock = `${path}.lock`;
+
+		// Create a fresh (non-stale) lock to simulate another holder
+		await Bun.write(lock, "");
+
+		await expect(
+			Promise.race([
+				acquireLock(path),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error("test timed out")), 6_000),
+				),
+			]),
+		).rejects.toThrow(/timeout/i);
+
+		// Cleanup the manually created lock
+		releaseLock(path);
+	}, 10_000);
+});
