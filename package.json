@@ -1,6 +1,6 @@
 {
 	"name": "@os-eco/canopy-cli",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"description": "Git-native prompt management for AI agent workflows",
 	"type": "module",
 	"bin": {

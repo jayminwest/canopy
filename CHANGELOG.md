@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-02-25
+
+### Added
+- `cn completions <bash|zsh|fish>` command — generates shell completion scripts for bash, zsh, and fish
+- `--timing` global flag — shows command execution time on stderr (e.g., `[timing] 42ms`)
+- Typo suggestions for unknown commands — suggests closest match via Levenshtein distance (e.g., `cn crate` → "Did you mean 'create'?")
+
 ## [0.1.8] - 2026-02-25
 
 ### Added

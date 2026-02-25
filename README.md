@@ -111,6 +111,7 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | `cn sync` | Stage and commit `.canopy/` changes (`--status`) |
 | `cn doctor` | Check project health and data integrity (`--fix`, `--verbose`) |
 | `cn upgrade` | Upgrade canopy to the latest npm version (`--check`) |
+| `cn completions <shell>` | Generate shell completions (`bash`, `zsh`, `fish`) |
 
 ### Global Options
 
@@ -119,6 +120,7 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 | `--json` | Structured JSON output (all commands) |
 | `-q`, `--quiet` | Suppress non-error output |
 | `--verbose` | Extra diagnostic output |
+| `--timing` | Show command execution time |
 | `--help`, `-h` | Show help |
 | `--version`, `-v` | Show version |
 
@@ -202,7 +204,7 @@ canopy/
     yaml.ts                Minimal YAML parser
     id.ts                  ID generation
     markers.ts             Marker-based section management for CLAUDE.md
-    commands/              One file per CLI subcommand (22 commands)
+    commands/              One file per CLI subcommand (23 commands)
   scripts/
     version-bump.ts        Atomic version management
   .canopy/                 On-disk data store
