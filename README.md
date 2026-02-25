@@ -159,7 +159,7 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 ## Development
 
 ```bash
-# Run tests (92 tests across 13 files)
+# Run tests (186 tests across 21 files)
 bun test
 
 # Lint + format check

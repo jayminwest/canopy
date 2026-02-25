@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-02-25
+
+### Added
+- Integration tests for `update` command (22 tests covering section add/remove/replace, tags, description, rename, status, schema, extends)
+- Integration tests for `sync` command (git repo setup, staging, commit verification)
+- Concurrent lock access tests for `store.ts` (5 parallel acquire/write operations)
+- Integration tests for `show` command (name lookup, `--json` output, not-found handling)
+- Integration tests for `list` command (filtering by tag, status, extends; archived visibility)
+- Integration tests for `archive` command (archive/unarchive, not-found, `--json`)
+- Integration tests for `pin`/`unpin` commands (pin to version, resolve pinned, unpin, `--json`)
+- Integration tests for `history` command (version timeline, `--limit`, `--json`)
+- Integration tests for `tree` command (inheritance tree rendering, cycle detection, `--json`)
+
 ## [0.1.6] - 2026-02-24
 
 ### Added
