@@ -84,6 +84,13 @@ Options:
 		if (prompt.tags?.length) humanOut(`Tags: ${prompt.tags.join(", ")}`);
 		if (prompt.schema) humanOut(`Schema: ${prompt.schema}`);
 		if (prompt.pinned !== undefined) humanOut(`Pinned: v${prompt.pinned}`);
+		if (prompt.frontmatter && Object.keys(prompt.frontmatter).length > 0) {
+			humanOut("Frontmatter:");
+			for (const [key, value] of Object.entries(prompt.frontmatter)) {
+				const display = typeof value === "object" ? JSON.stringify(value) : String(value);
+				humanOut(`  ${key}: ${display}`);
+			}
+		}
 		humanOut("");
 
 		for (const section of prompt.sections) {

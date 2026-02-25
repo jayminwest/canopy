@@ -59,6 +59,7 @@ Options:
 				version: result.version,
 				sections: result.sections,
 				resolvedFrom: result.resolvedFrom,
+				frontmatter: result.frontmatter,
 			});
 		} else if (format === "json") {
 			jsonOut({
@@ -66,12 +67,22 @@ Options:
 				version: result.version,
 				sections: result.sections,
 				resolvedFrom: result.resolvedFrom,
+				frontmatter: result.frontmatter,
 			});
 		} else {
 			// Markdown format
 			humanOut(c.bold(`# ${name}`) + c.dim(` (v${result.version})`));
 			humanOut(c.dim(`Resolved from: ${result.resolvedFrom.join(" → ")}`));
 			humanOut("");
+
+			if (Object.keys(result.frontmatter).length > 0) {
+				humanOut("---");
+				for (const [key, value] of Object.entries(result.frontmatter)) {
+					humanOut(`${key}: ${typeof value === "object" ? JSON.stringify(value) : value}`);
+				}
+				humanOut("---");
+				humanOut("");
+			}
 
 			for (const section of result.sections) {
 				humanOut(`## ${section.name}`);
