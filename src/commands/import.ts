@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
+import { extractFrontmatter } from "../frontmatter.ts";
 import { generateId } from "../id.ts";
 import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { acquireLock, appendJsonl, dedupById, readJsonl, releaseLock } from "../store.ts";
@@ -99,9 +100,10 @@ Options:
 		throw new ExitError(1);
 	}
 
-	const sections: Section[] = noSplit
-		? [{ name: "body", body: content.trim() }]
-		: splitMarkdown(content);
+	// Extract frontmatter before splitting
+	const { metadata, body } = extractFrontmatter(content);
+
+	const sections: Section[] = noSplit ? [{ name: "body", body: body.trim() }] : splitMarkdown(body);
 
 	const config = await loadConfig(cwd);
 
@@ -141,6 +143,17 @@ Options:
 		};
 
 		if (tags.length > 0) prompt.tags = tags;
+
+		// Map frontmatter description to prompt description
+		if (metadata.description && typeof metadata.description === "string") {
+			prompt.description = metadata.description;
+		}
+
+		// Store remaining frontmatter (excluding name/description which are Prompt fields)
+		const { name: _name, description: _desc, ...restFrontmatter } = metadata;
+		if (Object.keys(restFrontmatter).length > 0) {
+			prompt.frontmatter = restFrontmatter;
+		}
 
 		await appendJsonl(promptsPath, prompt);
 
