@@ -55,10 +55,10 @@ Every command supports `--json` for structured output. Global flags: `-v`/`--ver
 | Command | Description |
 |---------|-------------|
 | `cn init` | Initialize `.canopy/` in current directory |
-| `cn create --name <text>` | Create a new prompt (`--description`, `--extends`, `--tag`, `--status`, `--emit-dir`, `--section name=body`) |
+| `cn create --name <text>` | Create a new prompt (`--description`, `--extends`, `--tag`, `--status`, `--emit-dir`, `--fm`, `--section name=body`) |
 | `cn show <name>[@version]` | Show prompt record |
 | `cn list` | List prompts (`--tag`, `--status`, `--extends` filters) |
-| `cn update <name>` | Update a prompt — creates new version (`--section`, `--add-section`, `--remove-section`, `--tag`, `--untag`, `--description`, `--schema`, `--extends`, `--emit-dir`, `--status`, `--name`) |
+| `cn update <name>` | Update a prompt — creates new version (`--section`, `--add-section`, `--remove-section`, `--tag`, `--untag`, `--description`, `--schema`, `--extends`, `--emit-dir`, `--fm`, `--remove-fm`, `--status`, `--name`) |
 | `cn archive <name>` | Soft-delete a prompt |
 | `cn render <name>[@version]` | Resolve inheritance, output sections (`--format md\|json`) |
 | `cn tree <name>` | Show inheritance tree |
@@ -97,7 +97,7 @@ Every command supports `--json` for structured output. Global flags: `-v`/`--ver
 
 | Command | Description |
 |---------|-------------|
-| `cn import <path>` | Import `.md` file as prompt (`--name`, `--no-split`, `--tag`); splits on `##` by default |
+| `cn import <path>` | Import `.md` file as prompt (`--name`, `--no-split`, `--tag`); splits on `##` by default, extracts YAML frontmatter |
 | `cn stats` | Show active/draft/archived counts |
 | `cn sync` | Stage and commit `.canopy/` changes (`--status`) |
 | `cn doctor` | Check project health and data integrity (`--fix`, `--verbose`) |
@@ -179,6 +179,7 @@ canopy/
     config.ts              YAML config loading
     output.ts              JSON/human output formatting
     yaml.ts                Minimal YAML parser
+    frontmatter.ts         YAML frontmatter extraction and rendering
     id.ts                  ID generation
     markers.ts             Marker-based section management for CLAUDE.md
     commands/              One file per CLI subcommand (23 commands)

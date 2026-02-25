@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-25
+
+### Added
+- **Frontmatter support** — full YAML frontmatter lifecycle for prompts:
+  - `frontmatter` field on `Prompt` type and `RenderResult`
+  - `--fm <key=value>` flag on `cn create` and `cn update` (repeatable) for setting frontmatter fields
+  - `--remove-fm <key>` flag on `cn update` (repeatable) for removing frontmatter fields
+  - `src/frontmatter.ts` module — YAML frontmatter extraction and rendering
+  - Frontmatter merging in render engine (child inherits parent frontmatter, can override)
+  - `cn import` extracts YAML frontmatter from markdown files (maps `description` to prompt field, stores rest as frontmatter)
+  - `cn show` and `cn render` display frontmatter fields
+  - `cn emit` includes YAML frontmatter block in output files (name, description, and custom fields)
+- Tests for frontmatter module (frontmatter.test.ts) and render engine frontmatter merging (render.test.ts)
+- Tests for frontmatter in emit pipeline (emit.test.ts)
+
+### Fixed
+- Unknown command handler uses `process.exitCode` instead of `process.exit()` (avoids abrupt termination)
+- Unknown command errors route through JSON output when `--json` flag is present
+- `--timing` flag now works on `--version --json` path
+
+### Removed
+- Dead `mergeFrontmatter` function from render.ts
+
 ## [0.1.9] - 2026-02-25
 
 ### Added
