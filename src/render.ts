@@ -61,7 +61,7 @@ function resolveInner(
 
 	return {
 		sections: merged,
-		frontmatter: { ...parentResult.frontmatter, ...(prompt.frontmatter ?? {}) },
+		frontmatter: mergeFrontmatter(parentResult.frontmatter, prompt.frontmatter ?? {}),
 		resolvedFrom: [...parentResult.resolvedFrom, name],
 		version: prompt.version,
 	};
@@ -102,4 +102,11 @@ function mergeSections(parentSections: Section[], childSections: Section[]): Sec
 	}
 
 	return result;
+}
+
+function mergeFrontmatter(
+	parent: Record<string, unknown>,
+	child: Record<string, unknown>,
+): Record<string, unknown> {
+	return { ...parent, ...child };
 }

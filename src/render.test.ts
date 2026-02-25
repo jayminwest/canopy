@@ -150,4 +150,121 @@ describe("resolvePrompt", () => {
 	it("throws for missing prompt", () => {
 		expect(() => resolvePrompt("nonexistent", [])).toThrow(/not found/);
 	});
+
+	describe("frontmatter merging", () => {
+		it("returns own frontmatter when no parent", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					frontmatter: { model: "claude-3", temperature: 0.7 },
+				}),
+			];
+
+			const result = resolvePrompt("base", prompts);
+			expect(result.frontmatter).toEqual({ model: "claude-3", temperature: 0.7 });
+		});
+
+		it("inherits parent frontmatter", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					frontmatter: { model: "claude-3", temperature: 0.7 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [],
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.frontmatter).toEqual({ model: "claude-3", temperature: 0.7 });
+		});
+
+		it("child frontmatter overrides parent keys", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					frontmatter: { model: "claude-3", temperature: 0.7 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [],
+					frontmatter: { model: "claude-opus-4" },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.frontmatter).toEqual({ model: "claude-opus-4", temperature: 0.7 });
+		});
+
+		it("mixed: some keys inherited, some overridden, some new", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					frontmatter: { model: "claude-3", temperature: 0.5, maxTokens: 1000 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [],
+					frontmatter: { temperature: 0.9, topP: 0.95 },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.frontmatter).toEqual({
+				model: "claude-3",
+				temperature: 0.9,
+				maxTokens: 1000,
+				topP: 0.95,
+			});
+		});
+
+		it("empty frontmatter on child still inherits parent", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					frontmatter: { model: "claude-3" },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [],
+					frontmatter: {},
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.frontmatter).toEqual({ model: "claude-3" });
+		});
+
+		it("prompt without frontmatter field returns {}", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+				}),
+			];
+
+			const result = resolvePrompt("base", prompts);
+			expect(result.frontmatter).toEqual({});
+		});
+	});
 });
