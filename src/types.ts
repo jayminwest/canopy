@@ -16,6 +16,7 @@ export interface Prompt {
 	emitAs?: string;
 	emitDir?: string;
 	pinned?: number;
+	frontmatter?: Record<string, unknown>;
 	status: "draft" | "active" | "archived";
 	createdAt: string;
 	updatedAt: string;
