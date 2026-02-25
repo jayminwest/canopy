@@ -61,7 +61,7 @@ function resolveInner(
 
 	return {
 		sections: merged,
-		frontmatter: mergeFrontmatter(parentResult.frontmatter, prompt.frontmatter ?? {}),
+		frontmatter: { ...parentResult.frontmatter, ...(prompt.frontmatter ?? {}) },
 		resolvedFrom: [...parentResult.resolvedFrom, name],
 		version: prompt.version,
 	};

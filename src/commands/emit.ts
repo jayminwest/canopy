@@ -2,18 +2,26 @@ import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
+import { renderFrontmatter } from "../frontmatter.ts";
 import { c, errorOut, fmt, humanOut, jsonOut } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, readJsonl } from "../store.ts";
 import type { Config, Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
 
-function sectionsToMarkdown(sections: { name: string; body: string }[]): string {
-	const parts: string[] = [];
-	for (const section of sections) {
-		parts.push(`## ${section.name}\n\n${section.body}`);
-	}
-	return `${parts.join("\n\n")}\n`;
+function promptToMarkdown(
+	sections: { name: string; body: string }[],
+	frontmatter: Record<string, unknown>,
+	promptName: string,
+	promptDescription?: string,
+): string {
+	const combined: Record<string, unknown> = { name: promptName };
+	if (promptDescription) combined.description = promptDescription;
+	Object.assign(combined, frontmatter);
+
+	const fmBlock = renderFrontmatter(combined);
+	const sectionsMd = `${sections.map((s) => `## ${s.name}\n\n${s.body}`).join("\n\n")}\n`;
+	return fmBlock ? `${fmBlock}\n${sectionsMd}` : sectionsMd;
 }
 
 export function resolveEmitDir(prompt: Prompt, config: Config): string {
@@ -41,14 +49,22 @@ async function emitPrompt(
 	if (!force && existsSync(outPath)) {
 		// Check if up to date
 		const existing = await Bun.file(outPath).text();
-		const content = sectionsToMarkdown(result.sections);
+		const content = promptToMarkdown(
+			result.sections,
+			result.frontmatter,
+			prompt.name,
+			prompt.description,
+		);
 		if (existing === content) {
 			return { name: prompt.name, path: outPath, version: result.version, skipped: true };
 		}
 	}
 
 	mkdirSync(dirname(outPath), { recursive: true });
-	await Bun.write(outPath, sectionsToMarkdown(result.sections));
+	await Bun.write(
+		outPath,
+		promptToMarkdown(result.sections, result.frontmatter, prompt.name, prompt.description),
+	);
 
 	return { name: prompt.name, path: outPath, version: result.version };
 }
@@ -124,7 +140,12 @@ Options:
 				const promptOutDir = outDir ?? resolveEmitDir(p, config);
 				const outPath = join(promptOutDir, filename);
 				const result = resolvePrompt(p.name, allRecords, p.pinned);
-				const expected = sectionsToMarkdown(result.sections);
+				const expected = promptToMarkdown(
+					result.sections,
+					result.frontmatter,
+					p.name,
+					p.description,
+				);
 
 				let actual = "";
 				try {
@@ -213,7 +234,12 @@ Options:
 
 	if (!force && existsSync(resolvedPath)) {
 		const result = resolvePrompt(prompt.name, allRecords, prompt.pinned);
-		const content = sectionsToMarkdown(result.sections);
+		const content = promptToMarkdown(
+			result.sections,
+			result.frontmatter,
+			prompt.name,
+			prompt.description,
+		);
 		const existing = await Bun.file(resolvedPath).text();
 		if (existing === content) {
 			if (json) {
@@ -233,7 +259,10 @@ Options:
 
 	const result = resolvePrompt(prompt.name, allRecords, prompt.pinned);
 	mkdirSync(dirname(resolvedPath), { recursive: true });
-	await Bun.write(resolvedPath, sectionsToMarkdown(result.sections));
+	await Bun.write(
+		resolvedPath,
+		promptToMarkdown(result.sections, result.frontmatter, prompt.name, prompt.description),
+	);
 
 	if (json) {
 		jsonOut({
