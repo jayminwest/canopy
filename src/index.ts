@@ -6,6 +6,8 @@ import { ExitError } from "./types.ts";
 
 export const VERSION = "0.1.8";
 
+const t0 = performance.now();
+
 const rawArgs = process.argv.slice(2);
 
 // --version --json: rich metadata output (before Commander processes version flag)
@@ -29,6 +31,7 @@ program
 	.version(VERSION, "-v, --version", "Show version")
 	.option("-q, --quiet", "Suppress non-error output")
 	.option("--verbose", "Extra diagnostic output")
+	.option("--timing", "Show command execution time")
 	.addHelpCommand(false)
 	.configureHelp({
 		formatHelp(cmd: Command, helper: Help): string {
@@ -55,6 +58,7 @@ program
 				["--json", "Output as JSON"],
 				["-q, --quiet", "Suppress non-error output"],
 				["--verbose", "Extra diagnostic output"],
+				["--timing", "Show command execution time"],
 			];
 			const optLines: string[] = ["\nOptions:"];
 			for (const [flag, desc] of opts) {
@@ -89,6 +93,7 @@ const { register: registerOnboard } = await import("./commands/onboard.ts");
 const { register: registerPin } = await import("./commands/pin.ts");
 const { register: registerDoctor } = await import("./commands/doctor.ts");
 const { register: registerUpgrade } = await import("./commands/upgrade.ts");
+const { createCompletionsCommand } = await import("./commands/completions.ts");
 
 registerInit(program);
 registerShow(program);
@@ -111,19 +116,78 @@ registerOnboard(program);
 registerPin(program); // registers both pin and unpin
 registerDoctor(program);
 registerUpgrade(program);
+program.addCommand(createCompletionsCommand());
 
-program.parseAsync(process.argv).catch((err: unknown) => {
-	if (err instanceof ExitError) {
-		process.exitCode = err.exitCode;
-		return;
+// --- Typo suggestions via Levenshtein distance ---
+
+function editDistance(a: string, b: string): number {
+	const m = a.length;
+	const n = b.length;
+	const dp = new Array<number>((m + 1) * (n + 1)).fill(0);
+	const idx = (i: number, j: number) => i * (n + 1) + j;
+	for (let i = 0; i <= m; i++) dp[idx(i, 0)] = i;
+	for (let j = 0; j <= n; j++) dp[idx(0, j)] = j;
+	for (let i = 1; i <= m; i++) {
+		for (let j = 1; j <= n; j++) {
+			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+			const del = (dp[idx(i - 1, j)] ?? 0) + 1;
+			const ins = (dp[idx(i, j - 1)] ?? 0) + 1;
+			const sub = (dp[idx(i - 1, j - 1)] ?? 0) + cost;
+			dp[idx(i, j)] = Math.min(del, ins, sub);
+		}
 	}
-	const msg = err instanceof Error ? err.message : String(err);
-	const command = process.argv[2] ?? "";
-	const json = isJsonMode(process.argv.slice(2));
-	if (json) {
-		jsonOut({ success: false, command, error: msg });
-	} else {
-		errorOut(`Error: ${msg}`);
+	return dp[idx(m, n)] ?? 0;
+}
+
+function suggestCommand(input: string): string | undefined {
+	const commands = program.commands.map((c) => c.name());
+	let bestMatch: string | undefined;
+	let bestDist = 3; // Only suggest if distance <= 2
+	for (const cmd of commands) {
+		const dist = editDistance(input, cmd);
+		if (dist < bestDist) {
+			bestDist = dist;
+			bestMatch = cmd;
+		}
 	}
-	process.exitCode = 1;
+	return bestMatch;
+}
+
+program.on("command:*", (operands) => {
+	const unknown = operands[0] ?? "";
+	process.stderr.write(`Unknown command: ${unknown}\n`);
+	const suggestion = suggestCommand(unknown);
+	if (suggestion) {
+		process.stderr.write(`Did you mean '${suggestion}'?\n`);
+	}
+	process.stderr.write("Run 'cn --help' for usage.\n");
+	process.exit(1);
 });
+
+program
+	.parseAsync(process.argv)
+	.then(() => {
+		if (program.opts().timing) {
+			const elapsed = Math.round(performance.now() - t0);
+			process.stderr.write(`[timing] ${elapsed}ms\n`);
+		}
+	})
+	.catch((err: unknown) => {
+		if (program.opts().timing) {
+			const elapsed = Math.round(performance.now() - t0);
+			process.stderr.write(`[timing] ${elapsed}ms\n`);
+		}
+		if (err instanceof ExitError) {
+			process.exitCode = err.exitCode;
+			return;
+		}
+		const msg = err instanceof Error ? err.message : String(err);
+		const command = process.argv[2] ?? "";
+		const json = isJsonMode(process.argv.slice(2));
+		if (json) {
+			jsonOut({ success: false, command, error: msg });
+		} else {
+			errorOut(`Error: ${msg}`);
+		}
+		process.exitCode = 1;
+	});
