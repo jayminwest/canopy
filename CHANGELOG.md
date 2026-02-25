@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-02-25
+
+### Added
+- Per-prompt `--emit-dir` flag on `cn create` and `cn update` — routes individual prompts to a custom output directory
+- Tag-based emit routing via `emitDirByTag` config — map tags to output directories (e.g., `slash-command: .claude/commands`)
+- `resolveEmitDir()` function in `emit.ts` — centralizes emit directory resolution with priority: per-prompt > tag-based > global > default
+- One-level nested map support in YAML parser (`parseYaml` / `serializeYaml`) for `emitDirByTag` config
+- Tests for `resolveEmitDir` (6 unit tests) and emit routing integration (5 tests covering tag routing, per-prompt override, `--out-dir` override, `--dry-run`, `--check`)
+- Tests for nested YAML parsing and serialization (8 tests)
+
+### Changed
+- `cn emit` now resolves output directory per-prompt instead of using a single global directory
+- `cn doctor` emit staleness check respects per-prompt routing
+- YAML parser upgraded from flat key-value only to support one-level nested maps
+
 ## [0.1.7] - 2026-02-25
 
 ### Added
