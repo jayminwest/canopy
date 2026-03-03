@@ -9,6 +9,12 @@ import { dedupById, readJsonl } from "../store.ts";
 import type { Config, Prompt } from "../types.ts";
 import { ExitError } from "../types.ts";
 
+function formatSections(sections: { name: string; body: string }[]): string {
+	return sections.length === 1
+		? sections.map((s) => s.body).join("")
+		: sections.map((s) => `## ${s.name}\n\n${s.body}`).join("\n\n");
+}
+
 function promptToMarkdown(
 	sections: { name: string; body: string }[],
 	frontmatter: Record<string, unknown>,
@@ -20,7 +26,7 @@ function promptToMarkdown(
 	Object.assign(combined, frontmatter);
 
 	const fmBlock = renderFrontmatter(combined);
-	const sectionsMd = `${sections.map((s) => `## ${s.name}\n\n${s.body}`).join("\n\n")}\n`;
+	const sectionsMd = `${formatSections(sections)}\n`;
 	return fmBlock ? `${fmBlock}\n${sectionsMd}` : sectionsMd;
 }
 
@@ -38,7 +44,7 @@ function promptToTypeScript(
 	promptDescription?: string,
 ): string {
 	const exportName = toExportName(promptName);
-	const body = sections.map((s) => `## ${s.name}\n\n${s.body}`).join("\n\n");
+	const body = formatSections(sections);
 	const escaped = escapeTemplateLiteral(body);
 
 	const lines: string[] = [
