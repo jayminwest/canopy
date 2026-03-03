@@ -3,7 +3,7 @@ import { join } from "node:path";
 import chalk from "chalk";
 import type { Command } from "commander";
 import { loadConfig } from "../config.ts";
-import { jsonOut, palette } from "../output.ts";
+import { humanOut, jsonOut, palette } from "../output.ts";
 import { resolvePrompt } from "../render.ts";
 import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
@@ -501,9 +501,9 @@ function printCheck(check: DoctorCheck, verbose: boolean): void {
 				: chalk.red("✗");
 
 	const padded = check.name + " ".repeat(Math.max(20 - check.name.length, 2));
-	console.log(`  ${icon} ${chalk.dim(padded)}${check.message}`);
+	humanOut(`  ${icon} ${chalk.dim(padded)}${check.message}`);
 	for (const detail of check.details) {
-		console.log(`      ${chalk.dim(detail)}`);
+		humanOut(`      ${chalk.dim(detail)}`);
 	}
 }
 
@@ -596,17 +596,17 @@ function reportResults(
 			...(fixedItems && fixedItems.length > 0 ? { fixed: fixedItems } : {}),
 		});
 	} else {
-		console.log(`\n${chalk.bold("cn doctor")}\n`);
+		humanOut(`\n${chalk.bold("cn doctor")}\n`);
 		for (const check of checks) {
 			printCheck(check, verbose);
 		}
-		console.log(
+		humanOut(
 			`\n  ${chalk.dim(`${String(summary.pass)} passed, ${String(summary.warn)} warning, ${String(summary.fail)} failed`)}`,
 		);
 		if (fixedItems && fixedItems.length > 0) {
-			console.log(`\n${chalk.bold("Fixed:")}`);
+			humanOut(`\n${chalk.bold("Fixed:")}`);
 			for (const item of fixedItems) {
-				console.log(`  ${palette.brand("✓")} ${item}`);
+				humanOut(`  ${palette.brand("✓")} ${item}`);
 			}
 		}
 	}

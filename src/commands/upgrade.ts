@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import type { Command } from "commander";
-import { jsonOut } from "../output.ts";
+import { humanOut, jsonOut } from "../output.ts";
 
 const PACKAGE_NAME = "@os-eco/canopy-cli";
 
@@ -29,9 +29,9 @@ export async function run(args: string[]): Promise<void> {
 			jsonOut({ success: true, command: "upgrade", current, latest, upToDate });
 		} else {
 			if (upToDate) {
-				console.log(`${chalk.green("✔")} Already up to date (${current})`);
+				humanOut(`${chalk.green("✔")} Already up to date (${current})`);
 			} else {
-				console.log(`${chalk.yellow("!")} Update available: ${current} → ${latest}`);
+				humanOut(`${chalk.yellow("!")} Update available: ${current} → ${latest}`);
 				process.exitCode = 1;
 			}
 		}
@@ -49,13 +49,13 @@ export async function run(args: string[]): Promise<void> {
 				updated: false,
 			});
 		} else {
-			console.log(`${chalk.green("✔")} Already up to date (${current})`);
+			humanOut(`${chalk.green("✔")} Already up to date (${current})`);
 		}
 		return;
 	}
 
 	if (!jsonMode) {
-		console.log(`Upgrading ${PACKAGE_NAME} from ${current} to ${latest}...`);
+		humanOut(`Upgrading ${PACKAGE_NAME} from ${current} to ${latest}...`);
 	}
 
 	const result = Bun.spawnSync(["bun", "install", "-g", `${PACKAGE_NAME}@latest`], {
@@ -77,7 +77,7 @@ export async function run(args: string[]): Promise<void> {
 			updated: true,
 		});
 	} else {
-		console.log(`${chalk.green("✔")} Upgraded to ${latest}`);
+		humanOut(`${chalk.green("✔")} Upgraded to ${latest}`);
 	}
 }
 
