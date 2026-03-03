@@ -75,13 +75,18 @@ function renderPrompt(
 
 export function resolveEmitDir(prompt: Prompt, config: Config): string {
 	if (prompt.emitDir) return prompt.emitDir;
-	if (config.emitDirByTag && prompt.tags) {
+	if (config.targets && prompt.tags) {
 		for (const tag of prompt.tags) {
-			const dir = config.emitDirByTag[tag];
-			if (dir) return dir;
+			for (const target of Object.values(config.targets)) {
+				if (target.tags?.includes(tag)) return target.dir;
+			}
 		}
 	}
-	return config.emitDir ?? "agents";
+	if (config.targets) {
+		const defaultTarget = Object.values(config.targets).find((t) => t.default);
+		if (defaultTarget) return defaultTarget.dir;
+	}
+	return "agents";
 }
 
 async function emitPrompt(

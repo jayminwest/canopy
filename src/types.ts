@@ -38,11 +38,16 @@ export interface Schema {
 	updatedAt: string;
 }
 
+export interface EmitTarget {
+	dir: string;
+	default?: boolean;
+	tags?: string[];
+}
+
 export interface Config {
 	project: string;
 	version: string;
-	emitDir?: string;
-	emitDirByTag?: Record<string, string>;
+	targets?: Record<string, EmitTarget>;
 }
 
 /**

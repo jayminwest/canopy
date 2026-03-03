@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { parseYaml } from "../yaml.ts";
 import init from "./init.ts";
 
 const tmpDir = join(import.meta.dir, "../../.test-tmp-init");
@@ -102,6 +103,28 @@ describe("cn init", () => {
 			const gitattrs = await Bun.file(join(tmpDir, ".gitattributes")).text();
 			expect(gitattrs).toContain(".canopy/prompts.jsonl merge=union");
 			expect(gitattrs).toContain(".canopy/schemas.jsonl merge=union");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("writes config with targets format", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+
+		try {
+			await captureOutput(() => init([], false));
+			const configText = await Bun.file(join(tmpDir, ".canopy", "config.yaml")).text();
+			const parsed = parseYaml(configText);
+			expect(parsed.project).toBe("canopy");
+			expect(parsed.version).toBe("1");
+			// Should have targets, not emitDir
+			expect(parsed.targets).toBeDefined();
+			expect(parsed.emitDir).toBeUndefined();
+			const targets = parsed.targets as Record<string, Record<string, string>>;
+			expect(targets.default).toBeDefined();
+			expect(targets.default?.dir).toBe("agents");
+			expect(targets.default?.default).toBe("true");
 		} finally {
 			process.chdir(origCwd);
 		}

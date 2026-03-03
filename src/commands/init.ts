@@ -31,7 +31,9 @@ Initializes .canopy/ in the current directory with config and empty JSONL stores
 	await saveConfig(cwd, {
 		project: "canopy",
 		version: "1",
-		emitDir: "agents",
+		targets: {
+			default: { dir: "agents", default: true },
+		},
 	});
 
 	// Write .gitignore for .canopy/
@@ -60,7 +62,7 @@ Initializes .canopy/ in the current directory with config and empty JSONL stores
 		jsonOut({ success: true, command: "init", dir: canopyDir });
 	} else {
 		humanOut(`Initialized .canopy/ in ${cwd}`);
-		humanOut("  config.yaml: project=canopy, emitDir=agents");
+		humanOut("  config.yaml: project=canopy, targets: default → agents/");
 		humanOut("  prompts.jsonl created");
 		humanOut("  schemas.jsonl created");
 		humanOut("  .gitattributes updated with merge=union");

@@ -42,12 +42,27 @@ Overstory manages 7 agent definitions, 2 templates, and generates per-task overl
 ```yaml
 project: overstory
 version: "1"
-emitDir: agents       # Default output directory for cn emit (relative to project root)
+targets:
+  agents:
+    dir: agents
+    default: true
+  commands:
+    dir: .claude/commands
+    tags:
+      - slash-command
 ```
 
-The `project` field is used as the ID prefix (e.g., `overstory-a1b2`). The `emitDir` sets where `cn emit` writes rendered files by default.
+The `project` field is used as the ID prefix (e.g., `overstory-a1b2`). The `targets` section defines named emit targets — each with a directory, an optional `default: true` marker, and optional tags for routing prompts by tag.
 
-YAML parsed by a minimal built-in subset parser (~50 LOC) that handles the flat key-value format canopy needs. No external dependency.
+When `cn emit` resolves the output directory for a prompt:
+1. Per-prompt `emitDir` override (if set on the prompt)
+2. First target whose `tags` match one of the prompt's tags
+3. Target marked `default: true`
+4. Fallback to `"agents"`
+
+Legacy configs using `emitDir`/`emitDirByTag` are transparently converted to named targets on load.
+
+YAML parsed by a minimal built-in parser that handles nested maps, arrays, and flat key-value pairs. No external dependency.
 
 ### prompts.jsonl
 

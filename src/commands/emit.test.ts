@@ -307,25 +307,35 @@ describe("resolveEmitDir", () => {
 
 	const baseConfig = { project: "test", version: "1" };
 
-	it("falls back to global emitDir", () => {
-		const dir = resolveEmitDir(basePrompt, { ...baseConfig, emitDir: "output" });
+	it("uses default target dir", () => {
+		const config = {
+			...baseConfig,
+			targets: { default: { dir: "output", default: true } },
+		};
+		const dir = resolveEmitDir(basePrompt, config);
 		expect(dir).toBe("output");
 	});
 
-	it("falls back to 'agents' when no config emitDir", () => {
+	it("falls back to 'agents' when no targets configured", () => {
 		const dir = resolveEmitDir(basePrompt, baseConfig);
 		expect(dir).toBe("agents");
 	});
 
 	it("per-prompt emitDir wins over tag-based routing", () => {
 		const prompt = { ...basePrompt, emitDir: "custom", tags: ["slash-command"] };
-		const config = { ...baseConfig, emitDirByTag: { "slash-command": ".claude/commands" } };
+		const config = {
+			...baseConfig,
+			targets: { commands: { dir: ".claude/commands", tags: ["slash-command"] } },
+		};
 		expect(resolveEmitDir(prompt, config)).toBe("custom");
 	});
 
-	it("tag-based routing works", () => {
+	it("tag-based routing works via targets", () => {
 		const prompt = { ...basePrompt, tags: ["slash-command"] };
-		const config = { ...baseConfig, emitDirByTag: { "slash-command": ".claude/commands" } };
+		const config = {
+			...baseConfig,
+			targets: { commands: { dir: ".claude/commands", tags: ["slash-command"] } },
+		};
 		expect(resolveEmitDir(prompt, config)).toBe(".claude/commands");
 	});
 
@@ -333,19 +343,37 @@ describe("resolveEmitDir", () => {
 		const prompt = { ...basePrompt, tags: ["internal", "slash-command"] };
 		const config = {
 			...baseConfig,
-			emitDirByTag: { "slash-command": ".claude/commands", internal: ".internal/prompts" },
+			targets: {
+				internal: { dir: ".internal/prompts", tags: ["internal"] },
+				commands: { dir: ".claude/commands", tags: ["slash-command"] },
+			},
 		};
 		expect(resolveEmitDir(prompt, config)).toBe(".internal/prompts");
 	});
 
-	it("no matching tags falls back to global emitDir", () => {
+	it("no matching tags falls back to default target", () => {
 		const prompt = { ...basePrompt, tags: ["unrelated"] };
 		const config = {
 			...baseConfig,
-			emitDir: "output",
-			emitDirByTag: { "slash-command": ".claude/commands" },
+			targets: {
+				default: { dir: "output", default: true },
+				commands: { dir: ".claude/commands", tags: ["slash-command"] },
+			},
 		};
 		expect(resolveEmitDir(prompt, config)).toBe("output");
+	});
+
+	it("multiple targets, first matching tag wins", () => {
+		const prompt = { ...basePrompt, tags: ["docs"] };
+		const config = {
+			...baseConfig,
+			targets: {
+				default: { dir: "agents", default: true },
+				docs: { dir: "documentation", tags: ["docs", "readme"] },
+				commands: { dir: ".claude/commands", tags: ["slash-command"] },
+			},
+		};
+		expect(resolveEmitDir(prompt, config)).toBe("documentation");
 	});
 });
 
@@ -368,10 +396,9 @@ describe("cn emit routing integration", () => {
 			await saveConfig(tmpDir, {
 				project: "test",
 				version: "1",
-				emitDir: "agents",
-				emitDirByTag: {
-					"slash-command": ".claude/commands",
-					agent: "agents",
+				targets: {
+					agents: { dir: "agents", default: true, tags: ["agent"] },
+					commands: { dir: ".claude/commands", tags: ["slash-command"] },
 				},
 			});
 
@@ -420,7 +447,9 @@ describe("cn emit routing integration", () => {
 			await saveConfig(tmpDir, {
 				project: "test",
 				version: "1",
-				emitDirByTag: { "slash-command": ".claude/commands" },
+				targets: {
+					commands: { dir: ".claude/commands", tags: ["slash-command"] },
+				},
 			});
 
 			const overrideDir = join(tmpDir, "override");
@@ -452,8 +481,10 @@ describe("cn emit routing integration", () => {
 			await saveConfig(tmpDir, {
 				project: "test",
 				version: "1",
-				emitDir: "agents",
-				emitDirByTag: { "slash-command": ".claude/commands" },
+				targets: {
+					agents: { dir: "agents", default: true },
+					commands: { dir: ".claude/commands", tags: ["slash-command"] },
+				},
 			});
 
 			const { stdout } = await captureOutput(() => emitCmd(["--all", "--dry-run", "--json"], true));
@@ -481,7 +512,9 @@ describe("cn emit routing integration", () => {
 			await saveConfig(tmpDir, {
 				project: "test",
 				version: "1",
-				emitDirByTag: { "slash-command": ".claude/commands" },
+				targets: {
+					commands: { dir: ".claude/commands", tags: ["slash-command"] },
+				},
 			});
 
 			// First emit to the correct routed path

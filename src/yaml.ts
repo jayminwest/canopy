@@ -1,10 +1,13 @@
 /**
- * Minimal YAML parser for flat key-value config files with one-level nested map support.
- * Handles: string values, quoted strings, numbers as strings, one-level nested maps.
- * Does NOT handle: deeply nested objects, arrays, multiline values.
+ * Minimal YAML parser for config files with multi-level nesting and array support.
+ * Handles: string values, quoted strings, numbers as strings, nested maps, arrays.
+ * Does NOT handle: multiline values, flow syntax ({}/[]), anchors/aliases.
  */
 
-type YamlValue = string | Record<string, string>;
+export interface YamlMap {
+	[key: string]: YamlValue;
+}
+export type YamlValue = string | string[] | YamlMap;
 
 function maybeQuote(value: string): string {
 	const needsQuotes =
@@ -45,89 +48,157 @@ function stripInlineComment(value: string): string {
 	return value;
 }
 
-export function parseYaml(text: string): Record<string, YamlValue> {
-	const result: Record<string, YamlValue> = {};
-	const lines = text.split("\n");
+function getIndent(line: string): number {
+	return line.length - line.trimStart().length;
+}
 
-	for (let i = 0; i < lines.length; i++) {
+function parseBlock(lines: string[], startIdx: number, baseIndent: number): [YamlMap, number] {
+	const result: YamlMap = {};
+	let i = startIdx;
+
+	while (i < lines.length) {
 		const rawLine = lines[i] ?? "";
-		const line = rawLine.trim();
+		const trimmed = rawLine.trim();
 
-		// Skip comments and empty lines
-		if (!line || line.startsWith("#")) continue;
-
-		const colonIdx = line.indexOf(":");
-		if (colonIdx === -1) continue;
-
-		const key = line.slice(0, colonIdx).trim();
-		let value = line.slice(colonIdx + 1).trim();
-
-		if (!key) continue;
-
-		// Check if this is a nested map (empty value followed by indented children)
-		if (!value || value.startsWith("#")) {
-			// Look ahead for indented children
-			const children: Record<string, string> = {};
-			let hasChildren = false;
-			while (i + 1 < lines.length) {
-				const nextRaw = lines[i + 1] ?? "";
-				// Must be indented with 2 spaces (not a top-level key)
-				if (
-					!nextRaw.startsWith("  ") ||
-					(nextRaw.startsWith("   ") === false && nextRaw.match(/^[^ ]/))
-				)
-					break;
-				// Check for 2-space indent specifically
-				if (nextRaw.length > 0 && nextRaw[0] === " " && !nextRaw.startsWith("  ")) break;
-				if (!nextRaw.startsWith("  ")) break;
-				const childLine = nextRaw.trim();
-				if (!childLine || childLine.startsWith("#")) {
-					i++;
-					continue;
-				}
-				// If not indented (starts at column 0), stop
-				if (nextRaw[0] !== " ") break;
-				const childColon = childLine.indexOf(":");
-				if (childColon === -1) break;
-				const childKey = childLine.slice(0, childColon).trim();
-				let childValue = childLine.slice(childColon + 1).trim();
-				if (!childKey) break;
-				childValue = stripInlineComment(childValue);
-				childValue = unquote(childValue);
-				children[childKey] = childValue;
-				hasChildren = true;
-				i++;
-			}
-			if (hasChildren) {
-				result[key] = children;
-			} else {
-				// Empty value, store as empty string
-				result[key] = "";
-			}
+		// Skip empty lines and comments
+		if (!trimmed || trimmed.startsWith("#")) {
+			i++;
 			continue;
 		}
 
-		value = stripInlineComment(value);
-		value = unquote(value);
+		const indent = getIndent(rawLine);
 
-		result[key] = value;
+		// Dedented — end of this block
+		if (indent < baseIndent) break;
+
+		// Array item at this indent — shouldn't happen at map level
+		if (trimmed.startsWith("- ")) break;
+
+		const colonIdx = trimmed.indexOf(":");
+		if (colonIdx === -1) {
+			i++;
+			continue;
+		}
+
+		const key = trimmed.slice(0, colonIdx).trim();
+		const valuePart = trimmed.slice(colonIdx + 1).trim();
+
+		if (!key) {
+			i++;
+			continue;
+		}
+
+		// Key has an inline value
+		if (valuePart && !valuePart.startsWith("#")) {
+			result[key] = unquote(stripInlineComment(valuePart));
+			i++;
+			continue;
+		}
+
+		// No inline value — look for children
+		i++;
+		if (i < lines.length) {
+			// Find the next non-empty, non-comment line
+			let peekIdx = i;
+			while (peekIdx < lines.length) {
+				const peekTrimmed = (lines[peekIdx] ?? "").trim();
+				if (peekTrimmed && !peekTrimmed.startsWith("#")) break;
+				peekIdx++;
+			}
+
+			if (peekIdx < lines.length) {
+				const nextRaw = lines[peekIdx] ?? "";
+				const nextIndent = getIndent(nextRaw);
+				const nextTrimmed = nextRaw.trim();
+
+				if (nextIndent > baseIndent) {
+					if (nextTrimmed.startsWith("- ")) {
+						// Array children
+						const [arr, newIdx] = parseArray(lines, peekIdx, nextIndent);
+						result[key] = arr;
+						i = newIdx;
+					} else {
+						// Nested map children
+						const [map, newIdx] = parseBlock(lines, peekIdx, nextIndent);
+						result[key] = map;
+						i = newIdx;
+					}
+				} else {
+					// No children — empty value
+					result[key] = "";
+				}
+			} else {
+				result[key] = "";
+			}
+		} else {
+			result[key] = "";
+		}
 	}
 
+	return [result, i];
+}
+
+function parseArray(lines: string[], startIdx: number, baseIndent: number): [string[], number] {
+	const result: string[] = [];
+	let i = startIdx;
+
+	while (i < lines.length) {
+		const rawLine = lines[i] ?? "";
+		const trimmed = rawLine.trim();
+
+		if (!trimmed || trimmed.startsWith("#")) {
+			i++;
+			continue;
+		}
+
+		const indent = getIndent(rawLine);
+		if (indent < baseIndent) break;
+
+		if (trimmed.startsWith("- ")) {
+			result.push(unquote(stripInlineComment(trimmed.slice(2).trim())));
+			i++;
+		} else {
+			break;
+		}
+	}
+
+	return [result, i];
+}
+
+export function parseYaml(text: string): YamlMap {
+	const lines = text.split("\n");
+	const [result] = parseBlock(lines, 0, 0);
 	return result;
 }
 
-export function serializeYaml(obj: Record<string, YamlValue>): string {
+function serializeValue(key: string, value: YamlValue, indent: number): string[] {
+	const prefix = "\t".repeat(0) + " ".repeat(indent);
+
+	if (typeof value === "string") {
+		return [`${prefix}${key}: ${maybeQuote(value)}`];
+	}
+
+	if (Array.isArray(value)) {
+		const lines = [`${prefix}${key}:`];
+		for (const item of value) {
+			lines.push(`${prefix}  - ${maybeQuote(item)}`);
+		}
+		return lines;
+	}
+
+	// Nested map
+	const lines = [`${prefix}${key}:`];
+	for (const [childKey, childValue] of Object.entries(value)) {
+		lines.push(...serializeValue(childKey, childValue, indent + 2));
+	}
+	return lines;
+}
+
+export function serializeYaml(obj: YamlMap): string {
 	const lines: string[] = [];
 
 	for (const [key, value] of Object.entries(obj)) {
-		if (typeof value === "object") {
-			lines.push(`${key}:`);
-			for (const [childKey, childValue] of Object.entries(value)) {
-				lines.push(`  ${childKey}: ${maybeQuote(childValue)}`);
-			}
-		} else {
-			lines.push(`${key}: ${maybeQuote(value)}`);
-		}
+		lines.push(...serializeValue(key, value, 0));
 	}
 
 	return `${lines.join("\n")}\n`;
