@@ -35,7 +35,15 @@ export function toExportName(name: string): string {
 }
 
 export function escapeTemplateLiteral(s: string): string {
-	return s.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+	return s.replace(/\\[`\\$]|`|\$\{|\\/g, (match) => {
+		// Already-escaped sequences: preserve as-is in the template literal
+		if (match === "\\`" || match === "\\\\" || match === "\\$") return match;
+		// Raw characters that need escaping for template literal safety
+		if (match === "`") return "\\`";
+		if (match === "${") return "\\${";
+		// Lone backslash (not followed by `, \, or $)
+		return "\\\\";
+	});
 }
 
 function promptToTypeScript(

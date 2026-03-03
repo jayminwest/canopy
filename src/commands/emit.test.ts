@@ -559,6 +559,29 @@ describe("escapeTemplateLiteral", () => {
 		// biome-ignore lint/suspicious/noTemplateCurlyInString: testing literal ${} escaping
 		expect(escapeTemplateLiteral("a\\b`c${d}")).toBe("a\\\\b\\`c\\${d}");
 	});
+
+	it("preserves already-escaped backticks (no double-escaping)", () => {
+		expect(escapeTemplateLiteral("use \\`code\\` here")).toBe("use \\`code\\` here");
+	});
+
+	it("preserves already-escaped code fences", () => {
+		expect(escapeTemplateLiteral("\\`\\`\\`python\ncode\n\\`\\`\\`")).toBe(
+			"\\`\\`\\`python\ncode\n\\`\\`\\`",
+		);
+	});
+
+	it("preserves already-escaped backslashes", () => {
+		expect(escapeTemplateLiteral("path\\\\is\\\\here")).toBe("path\\\\is\\\\here");
+	});
+
+	it("preserves already-escaped dollar expressions", () => {
+		// biome-ignore lint/suspicious/noTemplateCurlyInString: testing literal ${} escaping
+		expect(escapeTemplateLiteral("value is \\${foo}")).toBe("value is \\${foo}");
+	});
+
+	it("handles mixed raw and pre-escaped content", () => {
+		expect(escapeTemplateLiteral("raw ` and escaped \\`")).toBe("raw \\` and escaped \\`");
+	});
 });
 
 describe("TypeScript emit", () => {
