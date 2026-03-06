@@ -67,7 +67,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerHistoryCommand(program: Command): void {
 	program
 		.command("history")
 		.description("Show version timeline for a prompt")

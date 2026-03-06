@@ -97,7 +97,7 @@ Options:
 	renderChildren(name, ancestors.length + 1);
 }
 
-export function register(program: Command): void {
+export function registerTreeCommand(program: Command): void {
 	program
 		.command("tree")
 		.description("Show inheritance tree for a prompt")

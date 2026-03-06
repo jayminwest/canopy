@@ -280,7 +280,7 @@ async function schemaRuleAdd(args: string[], json: boolean): Promise<void> {
 	}
 }
 
-export function register(program: Command): void {
+export function registerSchemaCommand(program: Command): void {
 	const schemaCmd = program
 		.command("schema")
 		.description("Schema management (create, show, list, rule add)");

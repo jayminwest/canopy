@@ -69,7 +69,7 @@ Initializes .canopy/ in the current directory with config and empty JSONL stores
 	}
 }
 
-export function register(program: Command): void {
+export function registerInitCommand(program: Command): void {
 	program
 		.command("init")
 		.description("Initialize .canopy/ in current directory")

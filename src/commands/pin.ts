@@ -151,7 +151,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerPinCommand(program: Command): void {
 	program
 		.command("pin")
 		.description("Pin prompt to a specific version")

@@ -81,7 +81,7 @@ export async function run(args: string[]): Promise<void> {
 	}
 }
 
-export function register(program: Command): void {
+export function registerUpgradeCommand(program: Command): void {
 	program
 		.command("upgrade")
 		.description("Upgrade canopy to the latest version from npm")

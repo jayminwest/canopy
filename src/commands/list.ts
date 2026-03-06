@@ -71,7 +71,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerListCommand(program: Command): void {
 	program
 		.command("list")
 		.description("List prompts")

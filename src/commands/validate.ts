@@ -151,7 +151,7 @@ Options:
 	if (!result.valid) throw new ExitError(1);
 }
 
-export function register(program: Command): void {
+export function registerValidateCommand(program: Command): void {
 	program
 		.command("validate [name]")
 		.description("Validate a prompt against its schema")

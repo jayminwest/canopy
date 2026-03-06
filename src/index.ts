@@ -74,51 +74,51 @@ program
 		},
 	});
 
-const { register: registerInit } = await import("./commands/init.ts");
-const { register: registerShow } = await import("./commands/show.ts");
-const { register: registerList } = await import("./commands/list.ts");
-const { register: registerArchive } = await import("./commands/archive.ts");
-const { register: registerHistory } = await import("./commands/history.ts");
-const { register: registerTree } = await import("./commands/tree.ts");
-const { register: registerStats } = await import("./commands/stats.ts");
-const { register: registerSync } = await import("./commands/sync.ts");
-const { register: registerDiff } = await import("./commands/diff.ts");
-const { register: registerRender } = await import("./commands/render.ts");
-const { register: registerCreate } = await import("./commands/create.ts");
-const { register: registerUpdate } = await import("./commands/update.ts");
-const { register: registerEmit } = await import("./commands/emit.ts");
-const { register: registerSchema } = await import("./commands/schema.ts");
-const { register: registerValidate } = await import("./commands/validate.ts");
-const { register: registerImport } = await import("./commands/import.ts");
-const { register: registerPrime } = await import("./commands/prime.ts");
-const { register: registerOnboard } = await import("./commands/onboard.ts");
-const { register: registerPin } = await import("./commands/pin.ts");
-const { register: registerDoctor } = await import("./commands/doctor.ts");
-const { register: registerUpgrade } = await import("./commands/upgrade.ts");
-const { createCompletionsCommand } = await import("./commands/completions.ts");
+const { registerInitCommand } = await import("./commands/init.ts");
+const { registerShowCommand } = await import("./commands/show.ts");
+const { registerListCommand } = await import("./commands/list.ts");
+const { registerArchiveCommand } = await import("./commands/archive.ts");
+const { registerHistoryCommand } = await import("./commands/history.ts");
+const { registerTreeCommand } = await import("./commands/tree.ts");
+const { registerStatsCommand } = await import("./commands/stats.ts");
+const { registerSyncCommand } = await import("./commands/sync.ts");
+const { registerDiffCommand } = await import("./commands/diff.ts");
+const { registerRenderCommand } = await import("./commands/render.ts");
+const { registerCreateCommand } = await import("./commands/create.ts");
+const { registerUpdateCommand } = await import("./commands/update.ts");
+const { registerEmitCommand } = await import("./commands/emit.ts");
+const { registerSchemaCommand } = await import("./commands/schema.ts");
+const { registerValidateCommand } = await import("./commands/validate.ts");
+const { registerImportCommand } = await import("./commands/import.ts");
+const { registerPrimeCommand } = await import("./commands/prime.ts");
+const { registerOnboardCommand } = await import("./commands/onboard.ts");
+const { registerPinCommand } = await import("./commands/pin.ts");
+const { registerDoctorCommand } = await import("./commands/doctor.ts");
+const { registerUpgradeCommand } = await import("./commands/upgrade.ts");
+const { registerCompletionsCommand } = await import("./commands/completions.ts");
 
-registerInit(program);
-registerShow(program);
-registerList(program);
-registerArchive(program);
-registerHistory(program);
-registerTree(program);
-registerStats(program);
-registerSync(program);
-registerDiff(program);
-registerRender(program);
-registerCreate(program);
-registerUpdate(program);
-registerEmit(program);
-registerSchema(program);
-registerValidate(program);
-registerImport(program);
-registerPrime(program);
-registerOnboard(program);
-registerPin(program); // registers both pin and unpin
-registerDoctor(program);
-registerUpgrade(program);
-program.addCommand(createCompletionsCommand());
+registerInitCommand(program);
+registerShowCommand(program);
+registerListCommand(program);
+registerArchiveCommand(program);
+registerHistoryCommand(program);
+registerTreeCommand(program);
+registerStatsCommand(program);
+registerSyncCommand(program);
+registerDiffCommand(program);
+registerRenderCommand(program);
+registerCreateCommand(program);
+registerUpdateCommand(program);
+registerEmitCommand(program);
+registerSchemaCommand(program);
+registerValidateCommand(program);
+registerImportCommand(program);
+registerPrimeCommand(program);
+registerOnboardCommand(program);
+registerPinCommand(program); // registers both pin and unpin
+registerDoctorCommand(program);
+registerUpgradeCommand(program);
+registerCompletionsCommand(program);
 
 // --- Typo suggestions via Levenshtein distance ---
 

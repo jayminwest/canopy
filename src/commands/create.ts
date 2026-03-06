@@ -177,7 +177,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerCreateCommand(program: Command): void {
 	program
 		.command("create")
 		.description("Create a new prompt")

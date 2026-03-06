@@ -135,7 +135,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerDiffCommand(program: Command): void {
 	program
 		.command("diff")
 		.description("Section-aware diff between two prompt versions")

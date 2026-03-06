@@ -101,7 +101,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerShowCommand(program: Command): void {
 	program
 		.command("show")
 		.description("Show prompt record")

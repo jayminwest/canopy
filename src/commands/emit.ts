@@ -340,7 +340,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerEmitCommand(program: Command): void {
 	program
 		.command("emit [name]")
 		.description("Render and write prompt to a file")

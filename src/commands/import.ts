@@ -175,7 +175,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerImportCommand(program: Command): void {
 	program
 		.command("import")
 		.description("Import an existing .md file as a prompt")

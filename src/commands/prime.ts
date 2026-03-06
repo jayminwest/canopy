@@ -160,7 +160,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerPrimeCommand(program: Command): void {
 	program
 		.command("prime")
 		.description("Output workflow context for AI agents")

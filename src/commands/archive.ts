@@ -74,7 +74,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerArchiveCommand(program: Command): void {
 	program
 		.command("archive")
 		.description("Archive a prompt")

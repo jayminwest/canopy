@@ -616,7 +616,7 @@ function reportResults(
 	}
 }
 
-export function register(program: Command): void {
+export function registerDoctorCommand(program: Command): void {
 	program
 		.command("doctor")
 		.description("Check project health and data integrity")

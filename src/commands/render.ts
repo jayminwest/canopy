@@ -102,7 +102,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerRenderCommand(program: Command): void {
 	program
 		.command("render")
 		.description("Render full prompt (resolve inheritance)")

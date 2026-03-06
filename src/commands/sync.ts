@@ -97,7 +97,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerSyncCommand(program: Command): void {
 	program
 		.command("sync")
 		.description("Stage and commit .canopy/ changes")

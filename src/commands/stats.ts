@@ -53,7 +53,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerStatsCommand(program: Command): void {
 	program
 		.command("stats")
 		.description("Show prompt statistics")

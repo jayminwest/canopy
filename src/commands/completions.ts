@@ -4,7 +4,7 @@
  * Generates completion scripts for bash, zsh, and fish shells.
  */
 
-import { Command } from "commander";
+import type { Command } from "commander";
 import { errorOut, isQuiet, jsonOut } from "../output.ts";
 import { ExitError } from "../types.ts";
 
@@ -552,10 +552,11 @@ export function generateFish(): string {
 }
 
 /**
- * Create the Commander command for `cn completions`.
+ * Register the `cn completions` command.
  */
-export function createCompletionsCommand(): Command {
-	return new Command("completions")
+export function registerCompletionsCommand(program: Command): void {
+	program
+		.command("completions")
 		.description("Generate shell completions")
 		.argument("<shell>", "Shell to generate completions for (bash, zsh, fish)")
 		.option("--json", "Output as JSON")

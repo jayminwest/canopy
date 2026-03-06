@@ -138,7 +138,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerOnboardCommand(program: Command): void {
 	program
 		.command("onboard")
 		.description("Add canopy section to CLAUDE.md for AI agent discovery")

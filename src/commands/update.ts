@@ -225,7 +225,7 @@ Options:
 	}
 }
 
-export function register(program: Command): void {
+export function registerUpdateCommand(program: Command): void {
 	program
 		.command("update")
 		.description("Update a prompt (creates new version)")
