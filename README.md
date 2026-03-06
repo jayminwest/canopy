@@ -124,7 +124,7 @@ Prompts are **composed, not duplicated**. A child prompt inherits all sections f
 
 ```
 .canopy/
-├── config.yaml          # Project config (project name, version, emitDir, emitDirByTag)
+├── config.yaml          # Project config (project name, version, named emit targets)
 ├── prompts.jsonl        # All prompt records with full version history
 ├── schemas.jsonl        # Validation schema definitions
 └── .gitignore           # Ignores *.lock files

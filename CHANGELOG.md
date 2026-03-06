@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-03-05
+
+### Added
+- **Named emit targets** — `config.yaml` now uses a `targets` section with named entries (each with `dir`, optional `default`, optional `tags`) replacing the flat `emitDir`/`emitDirByTag` fields
+  - Legacy `emitDir`/`emitDirByTag` configs are transparently converted to named targets on load
+  - `EmitTarget` type added to `types.ts`
+- **Quiet flag wiring** — `--quiet`/`-q` now fully suppresses non-error output across all commands
+  - `isQuiet()` exported from `output.ts` for programmatic checks
+  - `jsonOut()` suppresses non-error JSON output in quiet mode
+  - `humanOut()` used consistently across all commands for gate-able output
+  - Quiet mode applied early in `index.ts` (before any output)
+- `formatSections()` helper in emit — single-section prompts omit the `## heading` wrapper
+
+### Fixed
+- **Double-escaping of backticks in `.ts` emit** — `escapeTemplateLiteral()` now uses single-pass regex to correctly handle pre-escaped sequences
+- **Single-section emit** — prompts with one section no longer get a redundant `## heading` in emitted output
+
+### Changed
+- All command registration functions renamed from `register()` to `register<Name>Command()` for consistency
+- YAML parser expanded to support multi-level nested maps and array values
+- Stricter lint and TypeScript settings via updated biome.json and tsconfig.json
+- CI publish workflow extracts changelog notes for GitHub releases
+- Dependencies bumped: `@biomejs/biome` ^2.4.6, `commander` ^14.0.3, `typescript` ^5.9.0
+
 ## [0.2.1] - 2026-03-03
 
 ### Added
