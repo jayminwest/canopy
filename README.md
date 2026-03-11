@@ -55,10 +55,10 @@ Every command supports `--json` for structured output. Global flags: `-v`/`--ver
 | Command | Description |
 |---------|-------------|
 | `cn init` | Initialize `.canopy/` in current directory |
-| `cn create --name <text>` | Create a new prompt (`--description`, `--extends`, `--tag`, `--status`, `--emit-dir`, `--emit-as`, `--fm`, `--section name=body`) |
+| `cn create --name <text>` | Create a new prompt (`--description`, `--extends`, `--mixin`, `--tag`, `--status`, `--emit-dir`, `--emit-as`, `--fm`, `--section name=body`) |
 | `cn show <name>[@version]` | Show prompt record |
-| `cn list` | List prompts (`--tag`, `--status`, `--extends` filters) |
-| `cn update <name>` | Update a prompt — creates new version (`--section`, `--add-section`, `--remove-section`, `--tag`, `--untag`, `--description`, `--schema`, `--extends`, `--emit-dir`, `--emit-as`, `--fm`, `--remove-fm`, `--status`, `--name`) |
+| `cn list` | List prompts (`--tag`, `--status`, `--extends`, `--mixin` filters) |
+| `cn update <name>` | Update a prompt — creates new version (`--section`, `--add-section`, `--remove-section`, `--tag`, `--untag`, `--description`, `--schema`, `--extends`, `--mixin`, `--remove-mixin`, `--emit-dir`, `--emit-as`, `--fm`, `--remove-fm`, `--status`, `--name`) |
 | `cn archive <name>` | Soft-delete a prompt |
 | `cn render <name>[@version]` | Resolve inheritance, output sections (`--format md\|json`) |
 | `cn tree <name>` | Show inheritance tree |
@@ -106,7 +106,7 @@ Every command supports `--json` for structured output. Global flags: `-v`/`--ver
 
 ## Architecture
 
-Canopy stores prompts as versioned JSONL records in `.canopy/prompts.jsonl`, with validation schemas in `schemas.jsonl` and project config in `config.yaml`. Prompts are composed via single inheritance — a child inherits all sections from its parent and can override, append, or remove individual sections (up to 5 levels deep with circular reference detection). The `cn emit` pipeline renders resolved prompts to plain `.md` files (or `.ts` modules when `emitAs` ends in `.ts`) for downstream agent consumption. Advisory file locks and atomic writes ensure concurrent-safe access. See [CLAUDE.md](CLAUDE.md) for full technical details.
+Canopy stores prompts as versioned JSONL records in `.canopy/prompts.jsonl`, with validation schemas in `schemas.jsonl` and project config in `config.yaml`. Prompts are composed via single inheritance (`extends`) and multi-inheritance (`mixins`) — a child inherits sections from its parent chain plus any mixin prompts, and can override, append, or remove individual sections (up to 5 levels deep with circular reference detection). The `cn emit` pipeline renders resolved prompts to plain `.md` files (or `.ts` modules when `emitAs` ends in `.ts`) for downstream agent consumption. Advisory file locks and atomic writes ensure concurrent-safe access. See [CLAUDE.md](CLAUDE.md) for full technical details.
 
 ## How It Works
 
@@ -118,7 +118,7 @@ Canopy stores prompts as versioned JSONL records in `.canopy/prompts.jsonl`, wit
 5. git push               → Teammates get the same prompts, diffable in PRs
 ```
 
-Prompts are **composed, not duplicated**. A child prompt inherits all sections from its parent and can override, append, or remove individual sections. Up to 5 levels deep with circular reference detection.
+Prompts are **composed, not duplicated**. A child prompt inherits sections from its parent (`extends`) and any mixin prompts (`mixins`), and can override, append, or remove individual sections. Up to 5 levels deep with circular reference detection.
 
 ## What's in `.canopy/`
 
@@ -134,19 +134,25 @@ Everything is git-tracked. JSONL is diffable, mergeable (`merge=union` gitattrib
 
 ## Composition Model
 
-Single inheritance with section-level control:
+Single inheritance (`extends`) plus multi-inheritance (`mixins`) with section-level control:
 
 ```
 base-agent (sections: role, capabilities, workflow, constraints)
   └── reviewer (overrides: role, capabilities; inherits: workflow, constraints)
         └── senior-reviewer (overrides: role; inherits: everything else)
+
+trait-caution (sections: caution)   ← mixin
+trait-review (sections: review-style) ← mixin
+  └── cautious-reviewer (extends: base-agent, mixins: [trait-review, trait-caution])
 ```
 
 **Resolution rules:**
-1. Start with parent's rendered sections (recursive)
-2. Child section with same name **overrides** parent's
-3. Child section with new name **appends**
-4. Empty body (`body: ""`) **removes** inherited section
+1. Resolve `extends` chain (parent first, recursive)
+2. Apply `mixins` left-to-right — each mixin is fully resolved before merging
+3. Apply focal prompt's own sections on top
+4. Same-name section **overrides** earlier entry
+5. New-name section **appends**
+6. Empty body (`body: ""`) **removes** inherited section
 
 ## Concurrency & Multi-Agent Safety
 

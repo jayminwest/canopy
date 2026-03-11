@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-03-11
+
+### Added
+- **Multi-inheritance / mixin support** — prompts can now compose from multiple parents via `mixins` in addition to single `extends` inheritance
+  - `--mixin <name>` flag on `cn create` (repeatable) for adding mixins at creation time
+  - `--mixin <name>` and `--remove-mixin <name>` flags on `cn update` (repeatable) for managing mixins
+  - `--mixin <name>` filter on `cn list` for finding prompts that use a specific mixin
+  - `mixins` field on the `Prompt` type
+  - Resolution order: extends chain → mixins (left-to-right) → focal prompt; later entries override earlier on section name conflicts
+  - Frontmatter merges across extends, mixins, and focal prompt
+  - Circular reference detection covers mixin graphs
+  - Mixins with their own extends chains are fully resolved before merging
+- `cn tree` shows mixin relationships — focal prompt displays its mixins, children show theirs
+- `cn tree --json` includes `mixins` and `mixinUsers` fields
+- `cn doctor` inheritance check now validates mixin chains
+- 10 new tests for mixin resolution (section merging, override precedence, frontmatter merging, circular detection, extends+mixin combinations)
+
 ## [0.2.2] - 2026-03-05
 
 ### Added
