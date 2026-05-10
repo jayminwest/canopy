@@ -26,7 +26,9 @@ This injects prompt workflow context: commands, conventions, and common workflow
 - \`cn update <name>\` — Update a prompt (creates new version)
 - \`cn sync\` — Stage and commit .canopy/ changes
 
-**Do not manually edit emitted files.** Use \`cn update\` to modify prompts, then \`cn emit\` to regenerate.`;
+**Do not manually edit emitted files.** Use \`cn update\` to modify prompts, then \`cn emit\` to regenerate.
+
+**Mulch metadata:** Prompts can declare expertise dependencies via \`mulch.prime.domains\`, \`mulch.prime.files\`, \`mulch.budget\`, \`mulch.on_empty\`, plus a top-level \`extends_mulch\` flag (override-by-default; merge with parent when \`true\`). Canopy never shells out to \`ml\` — \`cn render --json\` surfaces the resolved declaration in a top-level \`mulch\` field for consumers to act on. See SPEC.md "Mulch Metadata".`;
 }
 
 function findTargetFile(projectRoot: string): string | null {

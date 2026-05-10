@@ -75,6 +75,23 @@ function fullContent(): string {
 ### Sync
 - \`cn sync\` — Stage and commit .canopy/ changes
 
+## Mulch Metadata
+
+Prompts can declare mulch (expertise) dependencies inline. Canopy stores the declaration as metadata and surfaces it in the render envelope — **canopy never shells out to \`ml\`**. Consumers (warren, overstory) read the resolved \`mulch\` field and run \`ml prime\` themselves.
+
+Schema fields on a prompt record:
+- \`mulch.prime.domains[]\` — domain names to prime
+- \`mulch.prime.files[]\` — file globs that scope priming
+- \`mulch.budget\` — non-negative number, consumer-defined units
+- \`mulch.on_empty\` — \`"skip"\` | \`"warn"\` | \`"error"\`
+- \`extends_mulch\` — boolean (default false): when true, child merges with parent's mulch (union domains/files, last-wins budget/on_empty); when false, child wholesale overrides
+
+\`cn render <name> --json\` includes a top-level \`mulch\` field whenever any role in the chain declared one. The field is **omitted entirely** (not null, not {}) when no role declared mulch — absent vs. empty is semantically distinct.
+
+\`cn doctor\` runs an optional \`mulch-domains\` check that warns on domains not declared in \`.mulch/mulch.config.yaml\`. The check is a typo guard, not a hard gate.
+
+See SPEC.md "Mulch Metadata" for full semantics.
+
 ## Common Workflows
 
 **Viewing what's available:**

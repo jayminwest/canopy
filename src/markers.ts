@@ -1,7 +1,7 @@
 export const START_MARKER = "<!-- canopy:start -->";
 export const END_MARKER = "<!-- canopy:end -->";
 
-export const ONBOARD_VERSION = 1;
+export const ONBOARD_VERSION = 2;
 export const VERSION_MARKER = `<!-- canopy-onboard-v:${String(ONBOARD_VERSION)} -->`;
 
 export function hasMarkerSection(content: string): boolean {

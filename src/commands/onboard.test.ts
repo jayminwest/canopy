@@ -167,13 +167,13 @@ describe("cn onboard", () => {
 		process.chdir(tmpDir);
 		try {
 			const oldContent =
-				"# Project\n\n<!-- canopy:start -->\n## Old Canopy Section\n<!-- canopy-onboard-v:0 -->\nold content\n<!-- canopy:end -->\n";
+				"# Project\n\n<!-- canopy:start -->\n## Old Canopy Section\n<!-- canopy-onboard-v:1 -->\nold content\n<!-- canopy:end -->\n";
 			await Bun.write(join(tmpDir, "CLAUDE.md"), oldContent);
 			await captureOutput(() => onboard([], false));
 			const content = await Bun.file(join(tmpDir, "CLAUDE.md")).text();
 			expect(content).toContain("# Project");
-			expect(content).toContain("canopy-onboard-v:1");
-			expect(content).not.toContain("canopy-onboard-v:0");
+			expect(content).toContain("canopy-onboard-v:2");
+			expect(content).not.toContain("canopy-onboard-v:1");
 			expect(content).not.toContain("Old Canopy Section");
 		} finally {
 			process.chdir(origCwd);
@@ -199,7 +199,7 @@ describe("cn onboard", () => {
 		try {
 			await captureOutput(() => onboard([], false));
 			const content = await Bun.file(join(tmpDir, "CLAUDE.md")).text();
-			expect(content).toContain("canopy-onboard-v:1");
+			expect(content).toContain("canopy-onboard-v:2");
 		} finally {
 			process.chdir(origCwd);
 		}

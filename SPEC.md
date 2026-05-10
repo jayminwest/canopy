@@ -135,16 +135,34 @@ interface Prompt {
 
   // Composition
   extends?: string;          // Parent prompt name (single inheritance)
+  mixins?: string[];         // Mixin prompt names (left-to-right merge before focal)
 
   // Metadata
   tags?: string[];           // Freeform tags for filtering
   schema?: string;           // Schema name for validation
   emitAs?: string;           // Override filename for cn emit (default: {name}.md)
+  emitDir?: string;          // Override emit directory
+  pinned?: number;           // Pinned version (used by render/emit)
+  frontmatter?: Record<string, unknown>;  // Free-form metadata, shallow-merged across chain
+
+  // Mulch (expertise) declaration — see "Mulch Metadata" below
+  mulch?: MulchBlock;        // Declared mulch dependencies for this prompt
+  extends_mulch?: boolean;   // If true, merge with parent's mulch instead of overriding
+
   status: "draft" | "active" | "archived";
 
   // Timestamps
   createdAt: string;         // ISO 8601
   updatedAt: string;         // ISO 8601
+}
+
+interface MulchBlock {
+  prime?: {
+    domains?: string[];      // Mulch domains to prime
+    files?: string[];        // File globs that scope priming
+  };
+  budget?: number;           // Non-negative number — consumer-defined units
+  on_empty?: "skip" | "warn" | "error";  // Behaviour when no records resolve
 }
 ```
 
@@ -234,6 +252,89 @@ Inheritance depth is capped at 5 levels. This is enforced at render time — if 
 ### Circular Reference Detection
 
 `cn render` tracks visited prompt names during resolution. If a cycle is detected, it errors immediately with the chain (e.g., "Circular inheritance: builder → base-agent → builder").
+
+## Mulch Metadata
+
+Roles often need specific [mulch](https://github.com/jayminwest/mulch) expertise to do their job. Canopy lets a prompt declare those dependencies inline as part of the role definition, so the declaration travels with the role through inheritance and emit. The declaration is metadata only — **canopy never shells out to `ml`** at render time. Consumers (e.g., warren, overstory) read the resolved `mulch` field from the render envelope and run `ml prime` themselves.
+
+### Schema
+
+```jsonl
+{"name":"builder","extends":"base-agent","extends_mulch":true,"mulch":{"prime":{"domains":["canopy","cicd"],"files":["src/**/*.ts"]},"budget":50,"on_empty":"warn"},"sections":[...]}
+```
+
+- `mulch.prime.domains` — array of domain names (must be strings)
+- `mulch.prime.files` — array of file globs (must be strings)
+- `mulch.budget` — non-negative finite number; consumer-defined units (records, tokens, etc.)
+- `mulch.on_empty` — one of `"skip"`, `"warn"`, `"error"`
+- `extends_mulch` — boolean flag controlling override-vs-merge with the parent
+
+All fields are optional. The block is omitted entirely (not `null`, not `{}`) when a prompt declares no mulch dependencies — see "Render Envelope" below.
+
+### Override-vs-Merge Semantics
+
+By default (`extends_mulch` absent or `false`), a child's `mulch:` block **wholesale overrides** any parent's resolved mulch. This is the opposite of the shallow-merge behaviour of `frontmatter`, and it is intentional: agents should not silently inherit expertise dependencies they didn't ask for.
+
+When `extends_mulch: true`, the resolver merges with the parent pairwise:
+
+- `prime.domains` — union of parent + child, deduplicated, parent's order preserved first
+- `prime.files` — same union semantics as `domains`
+- `budget` — last-wins (child overrides parent if defined)
+- `on_empty` — last-wins (child overrides parent if defined)
+
+Multi-level inheritance (grandparent → parent → child) applies the merge pairwise: each level's `extends_mulch` flag controls **its own** merge with its parent. A child can opt in to merging while its parent opts out, or vice versa.
+
+Mixins follow the same rule: when the focal prompt sets `extends_mulch: true`, each mixin's resolved `mulch` is merged left-to-right between the parent chain and the focal prompt. When `extends_mulch` is `false` (default), the focal prompt's own `mulch` block is the only one that survives — mixin mulch contributions are dropped.
+
+### Render Envelope
+
+`cn render <name> --json` and `cn render <name> --format json` surface the resolved declaration as a top-level field:
+
+```json
+{
+  "success": true,
+  "command": "render",
+  "name": "builder",
+  "version": 3,
+  "sections": [...],
+  "resolvedFrom": ["base-agent", "builder"],
+  "frontmatter": {...},
+  "mulch": {
+    "prime": { "domains": ["canopy", "cicd"], "files": ["src/**/*.ts"] },
+    "budget": 50,
+    "on_empty": "warn"
+  }
+}
+```
+
+The `mulch` key is **omitted entirely** (not `null`, not `{}`) when no role in the chain declared a mulch block. Consumers should treat absent and empty as semantically distinct — absent means "no opinion," empty means "this prompt actively declares no mulch."
+
+`cn render --format md` still emits the rendered markdown (sections only) to stdout; the mulch declaration is only surfaced through the JSON envelopes above.
+
+### No Shell-Out Invariant
+
+`cn render` does not invoke `ml` or any other external process. The mulch declaration is metadata in the prompt record — canopy resolves it the same way it resolves sections and frontmatter, with no network or subprocess calls. This keeps canopy a pure prompt-template engine and decouples its release cadence from mulch.
+
+### Validation
+
+The schema validator rejects malformed declarations with structural errors (this runs whether or not the prompt has a `schema:` set):
+
+- Unknown keys under `mulch` (allowed: `prime`, `budget`, `on_empty`)
+- Unknown keys under `mulch.prime` (allowed: `domains`, `files`)
+- `mulch.prime.domains` / `mulch.prime.files` not arrays of strings
+- `mulch.budget` not a non-negative finite number
+- `mulch.on_empty` not one of `skip` / `warn` / `error`
+- `extends_mulch` not a boolean
+
+### Doctor Check
+
+`cn doctor` runs an optional `mulch-domains` check that consults `.mulch/mulch.config.yaml` when present:
+
+- If `.mulch/mulch.config.yaml` is missing, the check passes with `"No .mulch/mulch.config.yaml found (skipped)"` — canopy works fine without mulch
+- If present, every domain referenced by a non-archived prompt's `mulch.prime.domains` is checked against the config's `domains:` list
+- Unknown domains produce a **warning** (not an error) — the message labels which mulch config was consulted, so multi-repo setups (root vs sub-repo `.mulch/`) can disambiguate
+
+This is a typo guard, not a hard gate — canopy never refuses to render a prompt because of an unknown domain.
 
 ## Versioning Model
 
@@ -397,8 +498,10 @@ List results:
 
 Render:
 ```json
-{ "success": true, "command": "render", "name": "builder", "version": 3, "sections": [...], "resolvedFrom": ["base-agent", "builder"] }
+{ "success": true, "command": "render", "name": "builder", "version": 3, "sections": [...], "resolvedFrom": ["base-agent", "builder"], "frontmatter": {...} }
 ```
+
+When any prompt in the resolved chain declares a `mulch:` block, the envelope includes a top-level `mulch` field. The field is omitted entirely (not `null`, not `{}`) when no role declared one. See "Mulch Metadata" for the resolved shape.
 
 Emit:
 ```json
@@ -514,6 +617,8 @@ Agents don't interact with canopy directly. They receive rendered prompts via th
 ### Mulch Integration
 
 Mulch expertise records often describe prompt conventions ("agent definitions should include four behavioral sections"). Canopy schemas can codify these conventions as enforceable rules rather than prose.
+
+In addition, prompts can declare which mulch domains and file globs a role depends on via the `mulch:` block (see "Mulch Metadata"). The declaration is metadata only — canopy emits it through the render envelope and consumers (e.g., warren, overstory) call `ml prime` themselves at run-spawn time. Canopy never shells out to `ml`.
 
 ## Standalone Value (Outside Overstory)
 
