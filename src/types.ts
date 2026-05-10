@@ -4,6 +4,19 @@ export interface Section {
 	required?: boolean;
 }
 
+export type MulchOnEmpty = "skip" | "warn" | "error";
+
+export interface MulchPrime {
+	domains?: string[];
+	files?: string[];
+}
+
+export interface MulchBlock {
+	prime?: MulchPrime;
+	budget?: number;
+	on_empty?: MulchOnEmpty;
+}
+
 export interface Prompt {
 	id: string;
 	name: string;
@@ -18,6 +31,8 @@ export interface Prompt {
 	emitDir?: string;
 	pinned?: number;
 	frontmatter?: Record<string, unknown>;
+	mulch?: MulchBlock;
+	extends_mulch?: boolean;
 	status: "draft" | "active" | "archived";
 	createdAt: string;
 	updatedAt: string;

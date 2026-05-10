@@ -10,6 +10,7 @@ import {
 	releaseLock,
 	writeJsonl,
 } from "./store.ts";
+import type { Prompt } from "./types.ts";
 
 const tmpDir = join(import.meta.dir, "../.test-tmp-store");
 
@@ -128,6 +129,68 @@ describe("acquireLock / releaseLock", () => {
 		// Should be able to acquire again after release
 		await acquireLock(path);
 		releaseLock(path);
+	});
+});
+
+describe("Prompt schema round-trip", () => {
+	const baseFields = {
+		version: 1,
+		sections: [],
+		status: "draft" as const,
+		createdAt: "2026-05-10T00:00:00Z",
+		updatedAt: "2026-05-10T00:00:00Z",
+	};
+
+	it("round-trips a prompt with mulch block and extends_mulch flag", async () => {
+		const path = join(tmpDir, "prompts.jsonl");
+		const prompt: Prompt = {
+			id: "canopy-aaaa",
+			name: "with-mulch",
+			...baseFields,
+			extends_mulch: true,
+			mulch: {
+				prime: {
+					domains: ["warren", "ecosystem"],
+					files: ["src/runs/**", ".seeds/**"],
+				},
+				budget: 50000,
+				on_empty: "skip",
+			},
+		};
+		await writeJsonl(path, [prompt]);
+
+		const result = await readJsonl<Prompt>(path);
+		expect(result).toHaveLength(1);
+		expect(result[0]).toEqual(prompt);
+	});
+
+	it("omits mulch and extends_mulch from JSONL when undefined", async () => {
+		const path = join(tmpDir, "prompts.jsonl");
+		const prompt: Prompt = {
+			id: "canopy-bbbb",
+			name: "plain-prompt",
+			...baseFields,
+		};
+		await writeJsonl(path, [prompt]);
+
+		const text = await Bun.file(path).text();
+		expect(text).not.toContain('"mulch"');
+		expect(text).not.toContain("extends_mulch");
+
+		const result = await readJsonl<Prompt>(path);
+		expect(result[0]?.mulch).toBeUndefined();
+		expect(result[0]?.extends_mulch).toBeUndefined();
+	});
+
+	it("reads legacy records without the new fields", async () => {
+		const path = join(tmpDir, "legacy.jsonl");
+		await Bun.write(
+			path,
+			`{"id":"canopy-cccc","name":"legacy","version":1,"sections":[],"status":"active","createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}\n`,
+		);
+		const result = await readJsonl<Prompt>(path);
+		expect(result[0]?.mulch).toBeUndefined();
+		expect(result[0]?.extends_mulch).toBeUndefined();
 	});
 });
 
