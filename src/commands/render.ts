@@ -52,7 +52,7 @@ Options:
 		const result = resolvePrompt(name, current, version);
 
 		if (json) {
-			jsonOut({
+			const envelope: Record<string, unknown> = {
 				success: true,
 				command: "render",
 				name,
@@ -60,15 +60,19 @@ Options:
 				sections: result.sections,
 				resolvedFrom: result.resolvedFrom,
 				frontmatter: result.frontmatter,
-			});
+			};
+			if (result.mulch !== undefined) envelope.mulch = result.mulch;
+			jsonOut(envelope);
 		} else if (format === "json") {
-			jsonOut({
+			const payload: Record<string, unknown> = {
 				name,
 				version: result.version,
 				sections: result.sections,
 				resolvedFrom: result.resolvedFrom,
 				frontmatter: result.frontmatter,
-			});
+			};
+			if (result.mulch !== undefined) payload.mulch = result.mulch;
+			jsonOut(payload);
 		} else {
 			// Markdown format
 			humanOut(c.bold(`# ${name}`) + c.dim(` (v${result.version})`));
