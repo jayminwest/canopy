@@ -8,7 +8,7 @@ import { resolvePrompt } from "../render.ts";
 import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
 import { LOCK_STALE_MS } from "../types.ts";
-import { validatePrompt } from "../validate.ts";
+import { validateMulch, validatePrompt } from "../validate.ts";
 import { resolveEmitDir } from "./emit.ts";
 
 interface DoctorCheck {
@@ -227,6 +227,63 @@ async function checkSchemaValidation(canopyDir: string): Promise<DoctorCheck> {
 		name: "schema-validation",
 		status: "pass",
 		message: "All schema-declared prompts pass validation",
+		details: [],
+		fixable: false,
+	};
+}
+
+// 4b. mulch-shape — structural validation of mulch block + extends_mulch flag
+async function checkMulchShape(canopyDir: string): Promise<DoctorCheck> {
+	const promptsPath = join(canopyDir, "prompts.jsonl");
+	if (!existsSync(promptsPath)) {
+		return {
+			name: "mulch-shape",
+			status: "pass",
+			message: "No prompts to check",
+			details: [],
+			fixable: false,
+		};
+	}
+
+	const allRecords = await readJsonl<Prompt>(promptsPath);
+	const prompts = dedupById(allRecords);
+
+	const details: string[] = [];
+	let checked = 0;
+	for (const prompt of prompts) {
+		if (prompt.status === "archived") continue;
+		const hasMulch = (prompt as { mulch?: unknown }).mulch !== undefined;
+		const hasExtendsMulch = (prompt as { extends_mulch?: unknown }).extends_mulch !== undefined;
+		if (!hasMulch && !hasExtendsMulch) continue;
+		checked++;
+		const errs = validateMulch(prompt);
+		for (const err of errs) {
+			details.push(`${prompt.name}: [${err.section}] ${err.message}`);
+		}
+	}
+
+	if (details.length > 0) {
+		return {
+			name: "mulch-shape",
+			status: "fail",
+			message: `${String(details.length)} malformed mulch declaration(s)`,
+			details,
+			fixable: false,
+		};
+	}
+	if (checked === 0) {
+		return {
+			name: "mulch-shape",
+			status: "pass",
+			message: "No mulch declarations to check",
+			details: [],
+			fixable: false,
+		};
+	}
+	return {
+		name: "mulch-shape",
+		status: "pass",
+		message: `${String(checked)} mulch declaration(s) well-formed`,
 		details: [],
 		fixable: false,
 	};
@@ -529,6 +586,9 @@ export async function run(fix: boolean, verbose: boolean, json: boolean): Promis
 	// 4. schema validation
 	checks.push(await checkSchemaValidation(canopyDir));
 
+	// 4b. mulch shape validation
+	checks.push(await checkMulchShape(canopyDir));
+
 	// 5. inheritance
 	checks.push(await checkInheritance(canopyDir));
 
@@ -555,6 +615,7 @@ export async function run(fix: boolean, verbose: boolean, json: boolean): Promis
 				reChecks.push(checkPromptsIntegrity(canopyDir));
 				reChecks.push(checkSchemasIntegrity(canopyDir));
 				reChecks.push(await checkSchemaValidation(canopyDir));
+				reChecks.push(await checkMulchShape(canopyDir));
 				reChecks.push(await checkInheritance(canopyDir));
 				reChecks.push(await checkEmitStaleness(canopyDir));
 				reChecks.push(checkStaleLocks(canopyDir));

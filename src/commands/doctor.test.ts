@@ -158,6 +158,61 @@ describe("cn doctor", () => {
 		}
 	});
 
+	it("mulch-shape flags malformed mulch declarations", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			const promptsPath = join(tmpDir, ".canopy", "prompts.jsonl");
+			const record = {
+				id: "canopy-0001",
+				name: "with-bad-mulch",
+				version: 1,
+				sections: [],
+				mulch: { on_empty: "explode", prime: { domains: "warren" } },
+				status: "active",
+				createdAt: "2024-01-01",
+				updatedAt: "2024-01-01",
+			};
+			await Bun.write(promptsPath, `${JSON.stringify(record)}\n`);
+			const { stdout } = await captureOutput(() => run(false, true, false));
+			expect(stdout).toContain("mulch-shape");
+			expect(stdout).toContain("malformed mulch");
+			expect(stdout).toContain("on_empty");
+			expect(stdout).toContain("domains");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("mulch-shape passes when prompts have well-formed mulch", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			const promptsPath = join(tmpDir, ".canopy", "prompts.jsonl");
+			const record = {
+				id: "canopy-0001",
+				name: "with-good-mulch",
+				version: 1,
+				sections: [],
+				extends_mulch: true,
+				mulch: {
+					prime: { domains: ["warren"], files: ["src/**"] },
+					budget: 5000,
+					on_empty: "skip",
+				},
+				status: "active",
+				createdAt: "2024-01-01",
+				updatedAt: "2024-01-01",
+			};
+			await Bun.write(promptsPath, `${JSON.stringify(record)}\n`);
+			const { stdout } = await captureOutput(() => run(false, true, false));
+			expect(stdout).toContain("mulch-shape");
+			expect(stdout).toContain("well-formed");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
 	it("inheritance detects broken extends", async () => {
 		const origCwd = process.cwd();
 		process.chdir(tmpDir);
