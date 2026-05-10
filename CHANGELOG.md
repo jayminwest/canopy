@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-05-10
+
+### Added
+- **Mulch integration** — prompts can now declare and inherit Mulch expertise scope
+  - `mulch` and `extends_mulch` fields on the `Prompt` type (`src/types.ts`) — `mulch` declares scope (`domains`, `files`, `mode`), `extends_mulch` controls how parent scopes merge (`replace` | `merge`)
+  - Validation of `mulch` block and `extends_mulch` shape in `src/validate.ts` (domain shape, file globs, mode enum, extends_mulch enum)
+  - `cn render --json` envelope surfaces resolved `mulch` scope after extends/mixin resolution
+  - `cn doctor` validates `mulch.prime.domains` against `.mulch/mulch.config.yaml` and flags unknown domains
+  - SPEC.md documents the `mulch` block and `extends_mulch` semantics; `cn prime` and `cn onboard` document the integration
+- **Mixin visibility** — `cn show` now surfaces a prompt's mixins alongside its `extends` chain, matching the multi-inheritance documentation in SPEC.md
+- E2E smoke test for warren-style render envelope consumption (`render.smoke.test.ts`)
+
 ## [0.2.3] - 2026-03-11
 
 ### Added
