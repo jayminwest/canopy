@@ -1,4 +1,4 @@
-import type { Prompt, Section } from "./types.ts";
+import type { MulchBlock, Prompt, Section } from "./types.ts";
 import { MAX_INHERIT_DEPTH } from "./types.ts";
 
 export interface RenderResult {
@@ -6,6 +6,7 @@ export interface RenderResult {
 	frontmatter: Record<string, unknown>;
 	resolvedFrom: string[];
 	version: number;
+	mulch?: MulchBlock;
 }
 
 /**
@@ -48,24 +49,30 @@ function resolveInner(
 	// No parent and no mixins — return own sections (excluding empty-body removals)
 	if (!prompt.extends && (!prompt.mixins || prompt.mixins.length === 0)) {
 		const sections = prompt.sections.filter((s) => s.body !== "");
-		return {
-			sections,
-			frontmatter: prompt.frontmatter ?? {},
-			resolvedFrom: [name],
-			version: prompt.version,
-		};
+		return withMulch(
+			{
+				sections,
+				frontmatter: prompt.frontmatter ?? {},
+				resolvedFrom: [name],
+				version: prompt.version,
+			},
+			prompt.mulch,
+		);
 	}
 
 	// Start with parent chain if exists
 	let baseSections: Section[] = [];
 	let baseFrontmatter: Record<string, unknown> = {};
 	let baseResolvedFrom: string[] = [];
+	let baseMulch: MulchBlock | undefined;
+	const mixinMulches: (MulchBlock | undefined)[] = [];
 
 	if (prompt.extends) {
 		const parentResult = resolveInner(prompt.extends, prompts, undefined, visited);
 		baseSections = parentResult.sections;
 		baseFrontmatter = parentResult.frontmatter;
 		baseResolvedFrom = parentResult.resolvedFrom;
+		baseMulch = parentResult.mulch;
 	}
 
 	// Apply each mixin left-to-right on top of the base
@@ -79,18 +86,92 @@ function resolveInner(
 			baseSections = mergeSections(baseSections, mixinResult.sections);
 			baseFrontmatter = { ...baseFrontmatter, ...mixinResult.frontmatter };
 			baseResolvedFrom = [...baseResolvedFrom, ...mixinResult.resolvedFrom];
+			mixinMulches.push(mixinResult.mulch);
 		}
 	}
 
 	// Finally apply the focal prompt's own sections on top
 	const merged = mergeSections(baseSections, prompt.sections);
 
-	return {
-		sections: merged,
-		frontmatter: { ...baseFrontmatter, ...(prompt.frontmatter ?? {}) },
-		resolvedFrom: [...baseResolvedFrom, name],
-		version: prompt.version,
-	};
+	// Resolve mulch with override-vs-merge semantics gated by extends_mulch.
+	// extends_mulch=true: union parent + each mixin's resolved mulch + focal.mulch
+	//   (domains/files unioned, budget/on_empty last-wins).
+	// extends_mulch=false (default): focal.mulch wholesale overrides — no inheritance,
+	//   not even from mixins. If focal has no mulch block, result is undefined.
+	let resolvedMulch: MulchBlock | undefined;
+	if (prompt.extends_mulch) {
+		resolvedMulch = baseMulch;
+		for (const m of mixinMulches) {
+			resolvedMulch = mergeMulch(resolvedMulch, m);
+		}
+		resolvedMulch = mergeMulch(resolvedMulch, prompt.mulch);
+	} else {
+		resolvedMulch = prompt.mulch;
+	}
+
+	return withMulch(
+		{
+			sections: merged,
+			frontmatter: { ...baseFrontmatter, ...(prompt.frontmatter ?? {}) },
+			resolvedFrom: [...baseResolvedFrom, name],
+			version: prompt.version,
+		},
+		resolvedMulch,
+	);
+}
+
+function withMulch(result: RenderResult, mulch: MulchBlock | undefined): RenderResult {
+	if (mulch === undefined) return result;
+	return { ...result, mulch };
+}
+
+function mergeMulch(
+	base: MulchBlock | undefined,
+	overlay: MulchBlock | undefined,
+): MulchBlock | undefined {
+	if (base === undefined) return overlay;
+	if (overlay === undefined) return base;
+
+	const merged: MulchBlock = {};
+
+	const baseDomains = base.prime?.domains;
+	const overlayDomains = overlay.prime?.domains;
+	const baseFiles = base.prime?.files;
+	const overlayFiles = overlay.prime?.files;
+	const domains =
+		baseDomains || overlayDomains ? unionPreserveOrder(baseDomains, overlayDomains) : undefined;
+	const files = baseFiles || overlayFiles ? unionPreserveOrder(baseFiles, overlayFiles) : undefined;
+	if (domains !== undefined || files !== undefined) {
+		merged.prime = {};
+		if (domains !== undefined) merged.prime.domains = domains;
+		if (files !== undefined) merged.prime.files = files;
+	}
+
+	const budget = overlay.budget !== undefined ? overlay.budget : base.budget;
+	if (budget !== undefined) merged.budget = budget;
+
+	const on_empty = overlay.on_empty !== undefined ? overlay.on_empty : base.on_empty;
+	if (on_empty !== undefined) merged.on_empty = on_empty;
+
+	return merged;
+}
+
+function unionPreserveOrder(a: string[] | undefined, b: string[] | undefined): string[] {
+	const seen = new Set<string>();
+	const out: string[] = [];
+	for (const item of a ?? []) {
+		if (!seen.has(item)) {
+			seen.add(item);
+			out.push(item);
+		}
+	}
+	for (const item of b ?? []) {
+		if (!seen.has(item)) {
+			seen.add(item);
+			out.push(item);
+		}
+	}
+	return out;
 }
 
 function findPrompt(prompts: Prompt[], name: string, version?: number): Prompt | undefined {

@@ -501,4 +501,331 @@ describe("resolvePrompt", () => {
 			expect(result.frontmatter).toEqual({});
 		});
 	});
+
+	describe("mulch resolution", () => {
+		it("omits mulch when no role declares it", () => {
+			const prompts: Prompt[] = [
+				makePrompt({ id: "p-0001", name: "base", sections: [] }),
+				makePrompt({ id: "p-0002", name: "child", extends: "base", sections: [] }),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toBeUndefined();
+			expect("mulch" in result).toBe(false);
+		});
+
+		it("returns own mulch when no parent", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: {
+						prime: { domains: ["canopy"], files: ["src/render.ts"] },
+						budget: 5000,
+						on_empty: "warn",
+					},
+				}),
+			];
+
+			const result = resolvePrompt("base", prompts);
+			expect(result.mulch).toEqual({
+				prime: { domains: ["canopy"], files: ["src/render.ts"] },
+				budget: 5000,
+				on_empty: "warn",
+			});
+		});
+
+		it("child mulch wholesale overrides parent without extends_mulch", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: {
+						prime: { domains: ["base-domain"], files: ["base.ts"] },
+						budget: 1000,
+						on_empty: "error",
+					},
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [],
+					mulch: { prime: { domains: ["child-domain"] } },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({ prime: { domains: ["child-domain"] } });
+		});
+
+		it("child without mulch and without extends_mulch yields undefined (no inheritance)", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: { prime: { domains: ["base-domain"] }, budget: 1000 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [],
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toBeUndefined();
+			expect("mulch" in result).toBe(false);
+		});
+
+		it("extends_mulch=true unions domains/files and last-wins budget/on_empty", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: {
+						prime: { domains: ["a", "b"], files: ["x.ts"] },
+						budget: 1000,
+						on_empty: "error",
+					},
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					extends_mulch: true,
+					sections: [],
+					mulch: {
+						prime: { domains: ["b", "c"], files: ["y.ts"] },
+						budget: 2000,
+					},
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({
+				prime: { domains: ["a", "b", "c"], files: ["x.ts", "y.ts"] },
+				budget: 2000,
+				on_empty: "error",
+			});
+		});
+
+		it("extends_mulch=true with no own mulch inherits parent unchanged", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: { prime: { domains: ["a"] }, budget: 100 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					extends_mulch: true,
+					sections: [],
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({ prime: { domains: ["a"] }, budget: 100 });
+		});
+
+		it("multi-level inheritance applies merge semantics pairwise", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "grand",
+					sections: [],
+					mulch: { prime: { domains: ["g"] }, budget: 100, on_empty: "error" },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "parent",
+					extends: "grand",
+					extends_mulch: true,
+					sections: [],
+					mulch: { prime: { domains: ["p"] }, budget: 200 },
+				}),
+				makePrompt({
+					id: "p-0003",
+					name: "child",
+					extends: "parent",
+					extends_mulch: true,
+					sections: [],
+					mulch: { prime: { domains: ["c"], files: ["c.ts"] } },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({
+				prime: { domains: ["g", "p", "c"], files: ["c.ts"] },
+				budget: 200,
+				on_empty: "error",
+			});
+		});
+
+		it("multi-level: middle layer without extends_mulch breaks the chain", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "grand",
+					sections: [],
+					mulch: { prime: { domains: ["g"] }, budget: 100 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "parent",
+					extends: "grand",
+					sections: [],
+					mulch: { prime: { domains: ["p"] } },
+				}),
+				makePrompt({
+					id: "p-0003",
+					name: "child",
+					extends: "parent",
+					extends_mulch: true,
+					sections: [],
+					mulch: { prime: { domains: ["c"] } },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({
+				prime: { domains: ["p", "c"] },
+			});
+		});
+
+		it("extends_mulch=true unions mixin contributions with parent and focal", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: { prime: { domains: ["base-d"] } },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "trait-a",
+					sections: [],
+					mulch: { prime: { domains: ["trait-a-d"], files: ["a.ts"] }, budget: 500 },
+				}),
+				makePrompt({
+					id: "p-0003",
+					name: "trait-b",
+					sections: [],
+					mulch: { prime: { files: ["b.ts"] }, on_empty: "skip" },
+				}),
+				makePrompt({
+					id: "p-0004",
+					name: "child",
+					extends: "base",
+					mixins: ["trait-a", "trait-b"],
+					extends_mulch: true,
+					sections: [],
+					mulch: { prime: { domains: ["child-d"] }, budget: 999 },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({
+				prime: {
+					domains: ["base-d", "trait-a-d", "child-d"],
+					files: ["a.ts", "b.ts"],
+				},
+				budget: 999,
+				on_empty: "skip",
+			});
+		});
+
+		it("without extends_mulch, mixin mulch is ignored even if focal has none", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "trait",
+					sections: [],
+					mulch: { prime: { domains: ["t"] } },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					mixins: ["trait"],
+					sections: [],
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toBeUndefined();
+		});
+
+		it("without extends_mulch, focal mulch wins over mixin mulch", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "trait",
+					sections: [],
+					mulch: { prime: { domains: ["trait-d"] }, budget: 100 },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					mixins: ["trait"],
+					sections: [],
+					mulch: { prime: { domains: ["child-d"] } },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch).toEqual({ prime: { domains: ["child-d"] } });
+		});
+
+		it("preserves order and dedupes within union", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [],
+					mulch: { prime: { domains: ["a", "b", "c"], files: ["x", "y"] } },
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					extends_mulch: true,
+					sections: [],
+					mulch: { prime: { domains: ["b", "d", "a"], files: ["y", "z"] } },
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.mulch?.prime?.domains).toEqual(["a", "b", "c", "d"]);
+			expect(result.mulch?.prime?.files).toEqual(["x", "y", "z"]);
+		});
+
+		it("regression: prompts without mulch render unchanged", () => {
+			const prompts: Prompt[] = [
+				makePrompt({
+					id: "p-0001",
+					name: "base",
+					sections: [{ name: "role", body: "Base role" }],
+				}),
+				makePrompt({
+					id: "p-0002",
+					name: "child",
+					extends: "base",
+					sections: [{ name: "extra", body: "Extra" }],
+				}),
+			];
+
+			const result = resolvePrompt("child", prompts);
+			expect(result.sections).toHaveLength(2);
+			expect(result.mulch).toBeUndefined();
+			expect("mulch" in result).toBe(false);
+		});
+	});
 });
