@@ -236,6 +236,35 @@ describe("cn show", () => {
 		}
 	});
 
+	it("displays extends and mixins in human output", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			await captureOutput(() => create(["--name", "ov-co-creation", "--json"], true));
+			await captureOutput(() => create(["--name", "ov-red-hat", "--json"], true));
+			await captureOutput(() =>
+				create(
+					[
+						"--name",
+						"cautious-review",
+						"--extends",
+						"ov-co-creation",
+						"--mixin",
+						"ov-red-hat",
+						"--json",
+					],
+					true,
+				),
+			);
+
+			const { stdout } = await captureOutput(() => show(["cautious-review"], false));
+			expect(stdout).toContain("Extends: ov-co-creation");
+			expect(stdout).toContain("Mixins: ov-red-hat");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
 	it("throws ExitError when no name provided", async () => {
 		const origCwd = process.cwd();
 		process.chdir(tmpDir);

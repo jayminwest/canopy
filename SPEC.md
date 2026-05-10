@@ -235,6 +235,34 @@ base-agent (sections: role, capabilities, workflow, constraints, communication)
 
 Rendered `builder` output contains: role (builder's), capabilities (builder's), workflow (base's), constraints (base's), communication (base's), quality-gates (builder's), failure-modes (builder's).
 
+### Mixins (Multi-Parent Composition)
+
+`extends` covers single inheritance — one parent, one chain. When a prompt needs to compose traits from independent parents (e.g., a co-creation workflow plus a red-hat critique trait), use `mixins`:
+
+```bash
+cn create cautious-review --extends ov-co-creation --mixin ov-red-hat
+```
+
+The `mixins` field is an array of prompt names applied left-to-right on top of the `extends` chain, before the focal prompt's own sections. Resolution order:
+
+1. Resolve the `extends` chain (parent first, recursively).
+2. For each mixin in order, resolve it fully (its own `extends` and `mixins` included) and merge its sections on top using the same override-or-append rule as inheritance.
+3. Apply the focal prompt's own sections last.
+
+Later entries override earlier on section-name conflicts: `extends` < mixin₁ < mixin₂ < … < focal. Frontmatter merges with the same precedence (shallow merge, child keys win).
+
+```
+ov-co-creation (extends)        sections: role, workflow, communication
+ov-red-hat     (mixin)          sections: critique-framing, escalation
+cautious-review (focal)         sections: role (override), summary
+```
+
+Rendered `cautious-review` output contains: role (focal's), workflow (parent's), communication (parent's), critique-framing (mixin's), escalation (mixin's), summary (focal's).
+
+Mixins share the same depth limit (5) and circular-reference detection as `extends`. The same prompt can legitimately appear via both `extends` and a mixin (diamond inheritance) — cycles are only detected when the focal prompt itself reappears in a chain.
+
+Mulch metadata inherits through mixins under the same `extends_mulch` flag — see "Override-vs-Merge Semantics" below.
+
 ### Section Removal
 
 A child prompt can explicitly remove an inherited section by including it with an empty body:

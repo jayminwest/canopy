@@ -81,6 +81,7 @@ Options:
 			`Status: ${prompt.status}  Created: ${prompt.createdAt}  Updated: ${prompt.updatedAt}`,
 		);
 		if (prompt.extends) humanOut(`Extends: ${prompt.extends}`);
+		if (prompt.mixins?.length) humanOut(`Mixins: ${prompt.mixins.join(", ")}`);
 		if (prompt.tags?.length) humanOut(`Tags: ${prompt.tags.join(", ")}`);
 		if (prompt.schema) humanOut(`Schema: ${prompt.schema}`);
 		if (prompt.pinned !== undefined) humanOut(`Pinned: v${prompt.pinned}`);
