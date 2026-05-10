@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { closeSync, constants, existsSync, mkdirSync, openSync, rmSync, utimesSync } from "node:fs";
+import {
+	closeSync,
+	constants,
+	existsSync,
+	mkdirSync,
+	openSync,
+	rmSync,
+	utimesSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { run } from "./doctor.ts";
 import init from "./init.ts";
@@ -208,6 +217,80 @@ describe("cn doctor", () => {
 			const { stdout } = await captureOutput(() => run(false, true, false));
 			expect(stdout).toContain("mulch-shape");
 			expect(stdout).toContain("well-formed");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("mulch-domains skips with pass when no .mulch/mulch.config.yaml is present", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			const { stdout } = await captureOutput(() => run(false, true, false));
+			expect(stdout).toContain("mulch-domains");
+			expect(stdout).toContain("skipped");
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("mulch-domains warns on domain typos and labels the consulted config", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			mkdirSync(join(tmpDir, ".mulch"), { recursive: true });
+			writeFileSync(
+				join(tmpDir, ".mulch", "mulch.config.yaml"),
+				"version: '1'\ndomains:\n  - canopy\n  - cicd\n",
+			);
+			const promptsPath = join(tmpDir, ".canopy", "prompts.jsonl");
+			const record = {
+				id: "canopy-0001",
+				name: "with-typo",
+				version: 1,
+				sections: [],
+				mulch: { prime: { domains: ["canopy", "warrn"] } },
+				status: "active",
+				createdAt: "2024-01-01",
+				updatedAt: "2024-01-01",
+			};
+			await Bun.write(promptsPath, `${JSON.stringify(record)}\n`);
+			const { stdout } = await captureOutput(() => run(false, true, false));
+			expect(stdout).toContain("mulch-domains");
+			expect(stdout).toContain("unknown domain");
+			expect(stdout).toContain("warrn");
+			expect(stdout).toContain(".mulch/mulch.config.yaml");
+			// warn must not flip the run to fail
+			expect(process.exitCode).not.toBe(1);
+		} finally {
+			process.chdir(origCwd);
+		}
+	});
+
+	it("mulch-domains passes when all referenced domains exist in config", async () => {
+		const origCwd = process.cwd();
+		process.chdir(tmpDir);
+		try {
+			mkdirSync(join(tmpDir, ".mulch"), { recursive: true });
+			writeFileSync(
+				join(tmpDir, ".mulch", "mulch.config.yaml"),
+				"version: '1'\ndomains:\n  - canopy\n  - cicd\n",
+			);
+			const promptsPath = join(tmpDir, ".canopy", "prompts.jsonl");
+			const record = {
+				id: "canopy-0001",
+				name: "with-known-domains",
+				version: 1,
+				sections: [],
+				mulch: { prime: { domains: ["canopy", "cicd"] } },
+				status: "active",
+				createdAt: "2024-01-01",
+				updatedAt: "2024-01-01",
+			};
+			await Bun.write(promptsPath, `${JSON.stringify(record)}\n`);
+			const { stdout } = await captureOutput(() => run(false, true, false));
+			expect(stdout).toContain("mulch-domains");
+			expect(stdout).toContain("reference known domains");
 		} finally {
 			process.chdir(origCwd);
 		}

@@ -9,6 +9,7 @@ import { dedupById, dedupByIdLast, readJsonl } from "../store.ts";
 import type { Prompt, Schema } from "../types.ts";
 import { LOCK_STALE_MS } from "../types.ts";
 import { validateMulch, validatePrompt } from "../validate.ts";
+import { parseYaml } from "../yaml.ts";
 import { resolveEmitDir } from "./emit.ts";
 
 interface DoctorCheck {
@@ -284,6 +285,106 @@ async function checkMulchShape(canopyDir: string): Promise<DoctorCheck> {
 		name: "mulch-shape",
 		status: "pass",
 		message: `${String(checked)} mulch declaration(s) well-formed`,
+		details: [],
+		fixable: false,
+	};
+}
+
+// 4c. mulch-domains — optional check: validate referenced domain names against
+// .mulch/mulch.config.yaml when present. Warns (does not fail) on unknowns and
+// degrades to a pass/no-op when mulch is absent. The result message labels
+// which mulch config was consulted to disambiguate multi-repo setups.
+async function checkMulchDomains(canopyDir: string): Promise<DoctorCheck> {
+	const cwd = canopyDir.replace(/\/.canopy$/, "");
+	const mulchConfigRel = ".mulch/mulch.config.yaml";
+	const mulchConfigPath = join(cwd, mulchConfigRel);
+
+	if (!existsSync(mulchConfigPath)) {
+		return {
+			name: "mulch-domains",
+			status: "pass",
+			message: `No ${mulchConfigRel} found (skipped)`,
+			details: [],
+			fixable: false,
+		};
+	}
+
+	let validDomains: Set<string>;
+	try {
+		const parsed = parseYaml(readFileSync(mulchConfigPath, "utf8"));
+		const domainsField = parsed.domains;
+		if (!Array.isArray(domainsField)) {
+			return {
+				name: "mulch-domains",
+				status: "warn",
+				message: `Could not read 'domains' from ${mulchConfigRel}`,
+				details: [],
+				fixable: false,
+			};
+		}
+		validDomains = new Set(domainsField);
+	} catch {
+		return {
+			name: "mulch-domains",
+			status: "warn",
+			message: `Could not parse ${mulchConfigRel}`,
+			details: [],
+			fixable: false,
+		};
+	}
+
+	const promptsPath = join(canopyDir, "prompts.jsonl");
+	if (!existsSync(promptsPath)) {
+		return {
+			name: "mulch-domains",
+			status: "pass",
+			message: `No prompts to check (consulted ${mulchConfigRel})`,
+			details: [],
+			fixable: false,
+		};
+	}
+
+	const allRecords = await readJsonl<Prompt>(promptsPath);
+	const prompts = dedupById(allRecords);
+	const details: string[] = [];
+	let checked = 0;
+
+	for (const prompt of prompts) {
+		if (prompt.status === "archived") continue;
+		const mulch = (prompt as { mulch?: { prime?: { domains?: unknown } } }).mulch;
+		const domains = mulch?.prime?.domains;
+		if (!Array.isArray(domains)) continue;
+		checked++;
+		for (const d of domains) {
+			if (typeof d !== "string") continue;
+			if (!validDomains.has(d)) {
+				details.push(`${prompt.name}: domain "${d}" not declared in ${mulchConfigRel}`);
+			}
+		}
+	}
+
+	if (details.length > 0) {
+		return {
+			name: "mulch-domains",
+			status: "warn",
+			message: `${String(details.length)} unknown domain reference(s) — consulted ${mulchConfigRel}`,
+			details,
+			fixable: false,
+		};
+	}
+	if (checked === 0) {
+		return {
+			name: "mulch-domains",
+			status: "pass",
+			message: `No mulch domain declarations to check (consulted ${mulchConfigRel})`,
+			details: [],
+			fixable: false,
+		};
+	}
+	return {
+		name: "mulch-domains",
+		status: "pass",
+		message: `${String(checked)} prompt(s) reference known domains (consulted ${mulchConfigRel})`,
 		details: [],
 		fixable: false,
 	};
@@ -589,6 +690,9 @@ export async function run(fix: boolean, verbose: boolean, json: boolean): Promis
 	// 4b. mulch shape validation
 	checks.push(await checkMulchShape(canopyDir));
 
+	// 4c. mulch domain references (optional, warn-only)
+	checks.push(await checkMulchDomains(canopyDir));
+
 	// 5. inheritance
 	checks.push(await checkInheritance(canopyDir));
 
@@ -616,6 +720,7 @@ export async function run(fix: boolean, verbose: boolean, json: boolean): Promis
 				reChecks.push(checkSchemasIntegrity(canopyDir));
 				reChecks.push(await checkSchemaValidation(canopyDir));
 				reChecks.push(await checkMulchShape(canopyDir));
+				reChecks.push(await checkMulchDomains(canopyDir));
 				reChecks.push(await checkInheritance(canopyDir));
 				reChecks.push(await checkEmitStaleness(canopyDir));
 				reChecks.push(checkStaleLocks(canopyDir));
