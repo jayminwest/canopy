@@ -73,9 +73,9 @@ export function registerInitCommand(program: Command): void {
 	program
 		.command("init")
 		.description("Initialize .canopy/ in current directory")
-		.option("--json", "Output as JSON")
-		.action(async (options: { json?: boolean }) => {
-			const args = options.json ? ["--json"] : [];
-			await init(args, options.json ?? false);
+		.action(async () => {
+			const json: boolean = program.opts().json ?? false;
+			const args = json ? ["--json"] : [];
+			await init(args, json);
 		});
 }

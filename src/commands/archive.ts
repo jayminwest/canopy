@@ -79,9 +79,9 @@ export function registerArchiveCommand(program: Command): void {
 		.command("archive")
 		.description("Archive a prompt")
 		.argument("<name>", "Prompt name")
-		.option("--json", "Output as JSON")
-		.action(async (name: string, options: { json?: boolean }) => {
-			const args = [name, ...(options.json ? ["--json"] : [])];
-			await archive(args, options.json ?? false);
+		.action(async (name: string) => {
+			const json: boolean = program.opts().json ?? false;
+			const args = [name, ...(json ? ["--json"] : [])];
+			await archive(args, json);
 		});
 }

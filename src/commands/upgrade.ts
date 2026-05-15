@@ -86,11 +86,10 @@ export function registerUpgradeCommand(program: Command): void {
 		.command("upgrade")
 		.description("Upgrade canopy to the latest version from npm")
 		.option("--check", "Check for updates without installing")
-		.option("--json", "Output as JSON")
-		.action(async (opts: { check?: boolean; json?: boolean }) => {
+		.action(async (opts: { check?: boolean }) => {
 			const args: string[] = [];
 			if (opts.check) args.push("--check");
-			if (opts.json) args.push("--json");
+			if (program.opts().json) args.push("--json");
 			await run(args);
 		});
 }

@@ -34,6 +34,7 @@ program
 	.option("-q, --quiet", "Suppress non-error output")
 	.option("--verbose", "Extra diagnostic output")
 	.option("--timing", "Show command execution time")
+	.option("--json", "Output as JSON")
 	.addHelpCommand(false)
 	.configureHelp({
 		formatHelp(cmd: Command, helper: Help): string {

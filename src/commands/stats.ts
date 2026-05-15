@@ -57,9 +57,9 @@ export function registerStatsCommand(program: Command): void {
 	program
 		.command("stats")
 		.description("Show prompt statistics")
-		.option("--json", "Output as JSON")
-		.action(async (options: { json?: boolean }) => {
-			const args = options.json ? ["--json"] : [];
-			await stats(args, options.json ?? false);
+		.action(async () => {
+			const json: boolean = program.opts().json ?? false;
+			const args = json ? ["--json"] : [];
+			await stats(args, json);
 		});
 }

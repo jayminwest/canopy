@@ -73,11 +73,11 @@ export function registerHistoryCommand(program: Command): void {
 		.description("Show version timeline for a prompt")
 		.argument("<name>", "Prompt name")
 		.option("--limit <n>", "Max versions to show (default: 20)")
-		.option("--json", "Output as JSON")
-		.action(async (name: string, options: { limit?: string; json?: boolean }) => {
+		.action(async (name: string, options: { limit?: string }) => {
+			const json: boolean = program.opts().json ?? false;
 			const args = [name];
 			if (options.limit) args.push("--limit", options.limit);
-			if (options.json) args.push("--json");
-			await history(args, options.json ?? false);
+			if (json) args.push("--json");
+			await history(args, json);
 		});
 }

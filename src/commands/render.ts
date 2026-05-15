@@ -112,11 +112,11 @@ export function registerRenderCommand(program: Command): void {
 		.description("Render full prompt (resolve inheritance)")
 		.argument("<name>", "Prompt name (name[@version])")
 		.option("--format <format>", "Output format: md or json (default: md)")
-		.option("--json", "Output as JSON")
-		.action(async (name: string, options: { format?: string; json?: boolean }) => {
+		.action(async (name: string, options: { format?: string }) => {
+			const json: boolean = program.opts().json ?? false;
 			const args = [name];
 			if (options.format) args.push("--format", options.format);
-			if (options.json) args.push("--json");
-			await renderCmd(args, options.json ?? false);
+			if (json) args.push("--json");
+			await renderCmd(args, json);
 		});
 }

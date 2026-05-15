@@ -142,9 +142,9 @@ export function registerDiffCommand(program: Command): void {
 		.argument("<name>", "Prompt name")
 		.argument("<v1>", "First version number")
 		.argument("<v2>", "Second version number")
-		.option("--json", "Output as JSON")
-		.action(async (name: string, v1: string, v2: string, options: { json?: boolean }) => {
-			const args = [name, v1, v2, ...(options.json ? ["--json"] : [])];
-			await diff(args, options.json ?? false);
+		.action(async (name: string, v1: string, v2: string) => {
+			const json: boolean = program.opts().json ?? false;
+			const args = [name, v1, v2, ...(json ? ["--json"] : [])];
+			await diff(args, json);
 		});
 }

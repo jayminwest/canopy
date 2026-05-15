@@ -171,4 +171,24 @@ describe("cn prime", () => {
 			process.chdir(origCwd);
 		}
 	});
+
+	it("CLI: 'cn prime --json' is accepted by commander and emits JSON", async () => {
+		const cliEntry = join(import.meta.dir, "../index.ts");
+		const proc = Bun.spawn(["bun", "run", cliEntry, "prime", "--json"], {
+			cwd: tmpDir,
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const [stdout, stderr, exitCode] = await Promise.all([
+			new Response(proc.stdout).text(),
+			new Response(proc.stderr).text(),
+			proc.exited,
+		]);
+		expect(stderr).not.toContain("unknown option");
+		expect(exitCode).toBe(0);
+		const parsed = JSON.parse(stdout.trim());
+		expect(parsed.success).toBe(true);
+		expect(parsed.command).toBe("prime");
+		expect(parsed.content).toContain("Canopy Workflow Context");
+	});
 });

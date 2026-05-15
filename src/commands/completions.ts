@@ -559,9 +559,8 @@ export function registerCompletionsCommand(program: Command): void {
 		.command("completions")
 		.description("Generate shell completions")
 		.argument("<shell>", "Shell to generate completions for (bash, zsh, fish)")
-		.option("--json", "Output as JSON")
-		.action((shell: string, opts: { json?: boolean }) => {
-			completionsCommand([shell], opts.json ?? false);
+		.action((shell: string) => {
+			completionsCommand([shell], program.opts().json ?? false);
 		});
 }
 

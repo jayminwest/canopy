@@ -102,11 +102,11 @@ export function registerSyncCommand(program: Command): void {
 		.command("sync")
 		.description("Stage and commit .canopy/ changes")
 		.option("--status", "Check sync status without committing")
-		.option("--json", "Output as JSON")
-		.action(async (options: { status?: boolean; json?: boolean }) => {
+		.action(async (options: { status?: boolean }) => {
+			const json: boolean = program.opts().json ?? false;
 			const args: string[] = [];
 			if (options.status) args.push("--status");
-			if (options.json) args.push("--json");
-			await sync(args, options.json ?? false);
+			if (json) args.push("--json");
+			await sync(args, json);
 		});
 }

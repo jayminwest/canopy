@@ -107,9 +107,9 @@ export function registerShowCommand(program: Command): void {
 		.command("show")
 		.description("Show prompt record")
 		.argument("<name>", "Prompt name (name[@version])")
-		.option("--json", "Output as JSON")
-		.action(async (name: string, options: { json?: boolean }) => {
-			const args = [name, ...(options.json ? ["--json"] : [])];
-			await show(args, options.json ?? false);
+		.action(async (name: string) => {
+			const json: boolean = program.opts().json ?? false;
+			const args = [name, ...(json ? ["--json"] : [])];
+			await show(args, json);
 		});
 }

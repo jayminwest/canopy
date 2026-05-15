@@ -88,22 +88,16 @@ export function registerListCommand(program: Command): void {
 		.option("--status <status>", "Filter by status (draft|active|archived)")
 		.option("--extends <name>", "Filter by parent prompt")
 		.option("--mixin <name>", "Filter by mixin")
-		.option("--json", "Output as JSON")
 		.action(
-			async (options: {
-				tag?: string;
-				status?: string;
-				extends?: string;
-				mixin?: string;
-				json?: boolean;
-			}) => {
+			async (options: { tag?: string; status?: string; extends?: string; mixin?: string }) => {
+				const json: boolean = program.opts().json ?? false;
 				const args: string[] = [];
 				if (options.tag) args.push("--tag", options.tag);
 				if (options.status) args.push("--status", options.status);
 				if (options.extends) args.push("--extends", options.extends);
 				if (options.mixin) args.push("--mixin", options.mixin);
-				if (options.json) args.push("--json");
-				await list(args, options.json ?? false);
+				if (json) args.push("--json");
+				await list(args, json);
 			},
 		);
 }
