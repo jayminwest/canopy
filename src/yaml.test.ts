@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseYaml, serializeYaml } from "./yaml.ts";
+import { parseScalarOrFlow, parseYaml, serializeYaml } from "./yaml.ts";
 
 describe("parseYaml", () => {
 	it("parses basic key-value pairs", () => {
@@ -137,5 +137,88 @@ describe("serializeYaml", () => {
 		expect(serialized).toContain('"path with: colon"');
 		const parsed = parseYaml(serialized);
 		expect(parsed.emitDirByTag).toEqual({ command: "path with: colon" });
+	});
+});
+
+describe("parseScalarOrFlow", () => {
+	it("parses bare strings", () => {
+		expect(parseScalarOrFlow("hello")).toBe("hello");
+		expect(parseScalarOrFlow("agents/canopy")).toBe("agents/canopy");
+	});
+
+	it("parses booleans", () => {
+		expect(parseScalarOrFlow("true")).toBe(true);
+		expect(parseScalarOrFlow("false")).toBe(false);
+	});
+
+	it("parses null forms", () => {
+		expect(parseScalarOrFlow("null")).toBeNull();
+		expect(parseScalarOrFlow("~")).toBeNull();
+		expect(parseScalarOrFlow("")).toBeNull();
+	});
+
+	it("parses integers and floats as numbers", () => {
+		expect(parseScalarOrFlow("42")).toBe(42);
+		expect(parseScalarOrFlow("-7")).toBe(-7);
+		expect(parseScalarOrFlow("3.14")).toBe(3.14);
+		expect(parseScalarOrFlow("-0.5")).toBe(-0.5);
+	});
+
+	it("unquotes double-quoted strings and decodes escapes", () => {
+		expect(parseScalarOrFlow('"hello world"')).toBe("hello world");
+		expect(parseScalarOrFlow('"a\\nb"')).toBe("a\nb");
+	});
+
+	it("unquotes single-quoted strings and decodes doubled apostrophes", () => {
+		expect(parseScalarOrFlow("'plain'")).toBe("plain");
+		expect(parseScalarOrFlow("'it''s'")).toBe("it's");
+	});
+
+	it("preserves numeric-looking strings inside quotes", () => {
+		expect(parseScalarOrFlow('"42"')).toBe("42");
+		expect(parseScalarOrFlow("'true'")).toBe("true");
+	});
+
+	it("parses flow sequences", () => {
+		expect(parseScalarOrFlow("[]")).toEqual([]);
+		expect(parseScalarOrFlow("[a, b, c]")).toEqual(["a", "b", "c"]);
+		expect(parseScalarOrFlow("[1, 2, 3]")).toEqual([1, 2, 3]);
+		expect(parseScalarOrFlow("[true, false, null]")).toEqual([true, false, null]);
+	});
+
+	it("parses flow mappings", () => {
+		expect(parseScalarOrFlow("{}")).toEqual({});
+		expect(parseScalarOrFlow("{ dir: agents }")).toEqual({ dir: "agents" });
+		expect(parseScalarOrFlow("{ dir: agents, byTag: true }")).toEqual({
+			dir: "agents",
+			byTag: true,
+		});
+	});
+
+	it("parses nested flow values", () => {
+		expect(parseScalarOrFlow("[[1, 2], [3, 4]]")).toEqual([
+			[1, 2],
+			[3, 4],
+		]);
+		expect(parseScalarOrFlow("{ outer: { inner: 1 } }")).toEqual({
+			outer: { inner: 1 },
+		});
+		expect(parseScalarOrFlow("{ items: [a, b] }")).toEqual({ items: ["a", "b"] });
+	});
+
+	it("handles quoted strings with commas inside flow sequences", () => {
+		expect(parseScalarOrFlow('["a, b", c]')).toEqual(["a, b", "c"]);
+	});
+
+	it("throws on unclosed flow sequence", () => {
+		expect(() => parseScalarOrFlow("[a, b")).toThrow(/Unclosed flow sequence/);
+	});
+
+	it("throws on unclosed flow mapping", () => {
+		expect(() => parseScalarOrFlow("{ k: v")).toThrow(/Unclosed flow mapping/);
+	});
+
+	it("throws on flow map entry without colon", () => {
+		expect(() => parseScalarOrFlow("{ keyonly }")).toThrow(/missing ':'/);
 	});
 });
