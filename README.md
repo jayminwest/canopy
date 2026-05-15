@@ -86,6 +86,15 @@ Every command supports `--json` for structured output. Global flags: `-v`/`--ver
 | `cn validate <name>` | Validate a prompt against its schema |
 | `cn validate --all` | Validate all prompts with schemas |
 
+### Config
+
+| Command | Description |
+|---------|-------------|
+| `cn config schema` | Emit the JSON Schema for `.canopy/config.yaml` (`--json` for compact output) |
+| `cn config show` | Print the current config or a value at `--path` (`--json`) |
+| `cn config set <path> <value>` | Validate + write a value at a dot-path; `<value>` is YAML-parsed |
+| `cn config unset <path>` | Remove the value at a dot-path |
+
 ### Agent Integration
 
 | Command | Description |
@@ -103,6 +112,29 @@ Every command supports `--json` for structured output. Global flags: `-v`/`--ver
 | `cn doctor` | Check project health and data integrity (`--fix`, `--verbose`) |
 | `cn upgrade` | Upgrade canopy to the latest npm version (`--check`) |
 | `cn completions <shell>` | Generate shell completions (bash, zsh, fish) |
+
+## Config
+
+`.canopy/config.yaml` is a small structured surface — `project`, `version`, and the nested `targets` map for named emit targets. Canopy publishes a JSON Schema describing the canonical shape so external UIs (warren V2's per-tool config editor) can render forms automatically and write back via per-knob CLI commands. The surface mirrors `sd config` / `ml config` for a uniform warren wire contract.
+
+```bash
+# Emit the schema (warren reads this once, renders a form)
+cn config schema --json
+
+# Read whole config or a specific dot-path
+cn config show
+cn config show --path targets.default.dir
+
+# Write a value (YAML-parsed; validated against the schema before write)
+cn config set project newname
+cn config set targets.default.dir agents
+cn config set targets.commands.tags '[slash-command, alias]'
+
+# Remove a value
+cn config unset targets.scratch
+```
+
+Writes hold the `config.yaml` advisory lock, atomically rename `.tmp.{random}` over the destination, and validate the full post-write document — partial writes that would leave the file inconsistent are rejected. The schema covers only the canonical `targets` shape; legacy `emitDir`/`emitDirByTag` configs are still readable, and the first `cn config set` on a legacy project normalizes the file to the canonical shape.
 
 ## Architecture
 
@@ -166,7 +198,7 @@ Canopy uses advisory file locking and atomic writes — the same patterns proven
 ## Design Principles
 
 - **JSONL is the database** — No binary files, no export pipeline
-- **Minimal dependencies** — chalk + commander only
+- **Minimal dependencies** — chalk + commander + ajv (ajv powers `cn config` schema validation)
 - **Concurrent-safe** — Advisory locks + atomic writes
 - **Git-native** — `merge=union` handles parallel merges, dedup on read
 - **Prompts are composed** — Inheritance eliminates duplication
@@ -183,6 +215,7 @@ canopy/
     render.ts              Inheritance resolution engine
     validate.ts            Schema validation
     config.ts              YAML config loading
+    config-schema.ts       JSON Schema for .canopy/config.yaml
     output.ts              JSON/human output formatting
     yaml.ts                Minimal YAML parser
     frontmatter.ts         YAML frontmatter extraction and rendering

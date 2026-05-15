@@ -19,7 +19,7 @@ SPEC.md            # Detailed specification
 
 ## Conventions
 
-- Minimal runtime dependencies — chalk + commander only
+- Minimal runtime dependencies — chalk, commander, ajv (ajv powers `cn config` schema validation)
 - Concurrent-safe: advisory file locks + atomic writes
 - Git-native: JSONL is diffable/mergeable, `merge=union` gitattribute
 - All CLI commands support `--json` flag

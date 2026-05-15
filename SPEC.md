@@ -1,6 +1,6 @@
 # Canopy
 
-Git-native prompt management for AI agent workflows. Zero dependencies, JSONL storage, Bun runtime.
+Git-native prompt management for AI agent workflows. Minimal dependencies, JSONL storage, Bun runtime.
 
 Prompts are structured records with composable sections, inheritance, versioning, and schema validation. The JSONL file IS the database. `cn emit` renders prompts to plain `.md` files for consumption by any tool.
 
@@ -20,7 +20,7 @@ Overstory manages 7 agent definitions, 2 templates, and generates per-task overl
 ## Design Principles
 
 1. **JSONL is the database.** No binary files, no export pipeline, no sync step. One file per record type, diffable, mergeable.
-2. **Zero runtime dependencies.** Bun built-ins only (`Bun.file`, `Bun.write`, `node:fs`, `node:crypto`).
+2. **Minimal runtime dependencies.** Bun built-ins (`Bun.file`, `Bun.write`, `node:fs`, `node:crypto`) plus three packages: `chalk`, `commander`, and `ajv` (JSON Schema validation for `cn config`).
 3. **Concurrent-safe by default.** Advisory file locks + atomic writes. Multiple agents in worktrees can read/write safely.
 4. **Git-native.** `merge=union` gitattribute handles parallel branch merges. No custom merge driver needed.
 5. **Prompts are composed, not duplicated.** Sections are the unit of reuse. Inheritance eliminates copy-paste. Change once, propagate everywhere.
@@ -62,7 +62,7 @@ When `cn emit` resolves the output directory for a prompt:
 
 Legacy configs using `emitDir`/`emitDirByTag` are transparently converted to named targets on load.
 
-YAML parsed by a minimal built-in parser that handles nested maps, arrays, and flat key-value pairs. No external dependency.
+YAML parsed by a minimal built-in parser that handles nested maps, arrays, flat key-value pairs, and flow-style scalars (`{key: value}`, `[a, b, c]`) via `parseScalarOrFlow` for `cn config set` inputs. No external YAML dependency.
 
 ### prompts.jsonl
 
@@ -493,6 +493,24 @@ cn validate <name>                     Validate a prompt against its schema
 cn validate --all                      Validate all prompts with schemas
 ```
 
+### Config Commands
+
+```
+cn config schema                       Emit the JSON Schema for .canopy/config.yaml
+  --json                               Compact single-line JSON (default is pretty-printed)
+
+cn config show                         Print the current config (or a value at --path)
+  --path <dot.path>                    Dot-path to read (e.g. targets.default.dir)
+  --json                               Envelope output as JSON
+
+cn config set <path> <value>           Validate and write a value at <path>
+                                       <value> is YAML-parsed (`true`/`42`/`[a,b]`/`{k: v}`)
+  --json                               Envelope output as JSON
+
+cn config unset <path>                 Remove the value at <path> (idempotent)
+  --json                               Envelope output as JSON
+```
+
 ### Utility Commands
 
 ```
@@ -545,6 +563,42 @@ Validate:
 Diff:
 ```json
 { "success": true, "command": "diff", "name": "builder", "from": 1, "to": 3, "changes": [{"section": "role", "type": "modified"}, {"section": "quality-gates", "type": "added"}] }
+```
+
+## Config Management
+
+`.canopy/config.yaml` is a small structured surface — `project`, `version`, and the nested `targets` map for named emit targets. Canopy publishes a JSON Schema describing the canonical shape so external UIs (warren V2's per-tool config editor) can render forms automatically and write back through per-knob CLI commands. The surface mirrors `sd config` and `ml config` so a single warren wire contract works across all three primitive CLIs.
+
+```bash
+# Emit the schema (warren reads this once, renders a form)
+cn config schema --json
+
+# Read the whole config or a specific dot-path
+cn config show
+cn config show --path targets.default.dir
+
+# Write a value (YAML-parsed; validated against the schema before write)
+cn config set project newname
+cn config set targets.default.dir agents
+cn config set targets.commands.tags '[slash-command, alias]'
+cn config set targets.scratch '{dir: .scratch}'
+
+# Remove a value (idempotent on absent paths)
+cn config unset targets.scratch
+```
+
+Writes hold the `config.yaml` advisory lock, write to `.tmp.{random}` and rename atomically over the destination, and validate the full post-write document against the schema before persisting — partial writes that would leave the file inconsistent are rejected and the `.tmp.*` file is cleaned up. The schema's `additionalProperties: false` posture rejects unknown top-level keys; AJV draft 2020-12 is advertised in `$schema`, but compile-time the URI is stripped so AJV runs in default draft-07 mode (matches the seeds implementation).
+
+The schema describes only the **canonical** shape (`project`, `version`, `targets: Record<name, EmitTarget>`). The legacy `emitDir`/`emitDirByTag` converter in `loadConfig` keeps reading old configs, but the first `cn config set` on a legacy project normalizes the file to the canonical shape — a one-way migration, documented as expected behavior.
+
+### JSON Envelopes
+
+```json
+{ "success": true, "command": "config show", "config": { "project": "canopy", "version": "1", "targets": {...} } }
+{ "success": true, "command": "config show", "path": "project", "value": "canopy" }
+{ "success": true, "command": "config set", "path": "project", "value": "canopy" }
+{ "success": true, "command": "config unset", "path": "targets.scratch", "removed": true }
+{ "success": false, "command": "config set", "error": "Config validation failed:\n  project: must be string" }
 ```
 
 ## Concurrency Model
@@ -679,7 +733,7 @@ Explicitly out of scope (keep it minimal):
 |---------|--------|-----------|
 | Runtime | Bun | Matches overstory/seeds/mulch, runs TS directly |
 | Language | TypeScript (strict) | Matches ecosystem |
-| Dependencies | Zero runtime | Matches overstory's hard rule |
+| Dependencies | `chalk`, `commander`, `ajv` | Minimal — ajv added in 0.2.5 for `cn config` schema validation |
 | Config | YAML (minimal built-in parser) | Matches ecosystem convention |
 | Storage | JSONL | Git-native, diffable, mergeable |
 | Locking | Advisory file locks | Proven in mulch/seeds for multi-agent |
@@ -715,6 +769,7 @@ canopy/
     store.ts                  # JSONL read/write/lock/atomic
     id.ts                     # ID generation
     config.ts                 # YAML config load/save
+    config-schema.ts          # JSON Schema for .canopy/config.yaml (warren wire contract)
     output.ts                 # JSON + human output helpers
     yaml.ts                   # Minimal YAML parser (flat key-value only)
     render.ts                 # Inheritance resolution + section composition
@@ -737,6 +792,7 @@ canopy/
       import.ts               # cn import
       sync.ts                 # cn sync
       stats.ts                # cn stats
+      config.ts               # cn config schema/show/set/unset
     render.test.ts            # Inheritance resolution tests
     validate.test.ts          # Schema validation tests
     store.test.ts             # Core data layer tests

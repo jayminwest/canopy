@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`cn config` command** — schema-driven read/write surface for `.canopy/config.yaml`, mirroring `sd config` / `ml config` to complete warren V2's wire contract for the three primitive CLIs
+  - `cn config schema [--json]` emits the JSON Schema for `.canopy/config.yaml` (canonical `targets` shape; `additionalProperties: false`); warren reads this once to auto-render a form
+  - `cn config show [--path <dot.path>] [--json]` prints the current config or a value at a dot-path
+  - `cn config set <path> <value> [--json]` validates and atomically writes a value; `<value>` is YAML-parsed (`true`, `42`, `[a, b]`, `{k: v}`)
+  - `cn config unset <path> [--json]` removes a value (idempotent on absent paths)
+  - Writes hold the `config.yaml` advisory lock, write to `.tmp.{random}` then rename, and validate the full post-write document before persisting
+  - First `cn config set` on a legacy `emitDir`/`emitDirByTag` config normalizes the file to the canonical `targets` shape
+  - `src/config-schema.ts` exports `configSchema()` (draft 2020-12 advertised; URI stripped at compile so AJV runs default draft-07 mode, matching the seeds implementation)
+  - `src/yaml.ts` adds `parseScalarOrFlow` and the `YamlScalar` union for typed scalar/flow-style parsing used by `cn config set`
+
+### Changed
+- **Runtime dependencies** — `ajv` joins `chalk` and `commander` as the third runtime dependency (pinned `^8.17.1` to match mulch); justified by parity across the three primitive CLIs and the warren wire contract requirement
+- SPEC.md, README.md, and CLAUDE.md document the `cn config` surface and the updated dependency posture
+
 ## [0.2.4] - 2026-05-10
 
 ### Added
