@@ -19,4 +19,4 @@ Steps:
    - Update CLI reference tables if commands were added, removed, or had flags changed
    - Update command count in Project Structure section if commands were added or removed
    - Update any other stats or structural information that changed
-8. Present a summary of all changes made — do NOT commit or push
+8. Commit all changes with a message like "release: vX.Y.Z". Then present a summary of what changed.
