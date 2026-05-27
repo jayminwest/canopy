@@ -35,6 +35,8 @@
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"typecheck": "tsc --noEmit",
+		"check:size": "bun run scripts/check-file-sizes.ts",
+		"check:debt": "bun run scripts/check-debt-markers.ts",
 		"version:bump": "bun run scripts/version-bump.ts"
 	},
 	"devDependencies": {

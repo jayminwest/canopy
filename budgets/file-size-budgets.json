@@ -1,0 +1,10 @@
+{
+	"_comment": "Per-file line-count budgets enforced by scripts/check-file-sizes.ts. New `.ts`/`.tsx` files default to `threshold` lines. Files listed in `budgets` are grandfathered at their commit-time line count and may not grow past their entry — the ratchet only goes DOWN. Loosening (raising `threshold` or a budget entry) requires an explicit commit by a human; the script never auto-edits this file.",
+	"threshold": 500,
+	"budgets": {
+		"src/commands/completions.ts": 610,
+		"src/commands/doctor.ts": 795,
+		"src/commands/emit.test.ts": 684,
+		"src/render.test.ts": 831
+	}
+}
