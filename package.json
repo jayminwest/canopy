@@ -39,6 +39,9 @@
 		"check:size": "bun run scripts/check-file-sizes.ts",
 		"check:debt": "bun run scripts/check-debt-markers.ts",
 		"check:coverage": "bun run scripts/check-coverage.ts",
+		"check:agents": "bun run scripts/validate-agents-md.ts",
+		"gen:docs": "bun run scripts/generate-cli-docs.ts",
+		"gen:docs:check": "bun run scripts/generate-cli-docs.ts --check",
 		"report:test-timing": "bun run scripts/report-test-timing.ts",
 		"report:quality-metrics": "bun run scripts/report-quality-metrics.ts",
 		"version:bump": "bun run scripts/version-bump.ts"

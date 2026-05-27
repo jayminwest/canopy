@@ -1,0 +1,45 @@
+%% canopy — service architecture
+%%
+%% Renders inline on GitHub or via `bunx @mermaid-js/mermaid-cli -i
+%% docs/architecture.mmd -o docs/architecture.png`. The diagram is the
+%% canonical answer to "how does canopy resolve a prompt end to end?".
+%% Keep it boring; the goal is to orient an agent in 30 seconds.
+
+flowchart LR
+    user["Agent / Human"]
+    cli["cn CLI\n(src/index.ts)"]
+    cmds["Command handlers\n(src/commands/*)"]
+    render["Render engine\n(src/render.ts)"]
+    validate["Schema validator\n(src/validate.ts)"]
+    store["JSONL store\n(.canopy/prompts.jsonl)"]
+    emitted["Emitted prompts\n(*.md / *.ts on disk)"]
+
+    user -->|"invokes"| cli
+    cli -->|"dispatches via Commander"| cmds
+    cmds -->|"read / append"| store
+    cmds -->|"resolve inheritance"| render
+    cmds -->|"check against schemas.jsonl"| validate
+    render -->|"merge sections"| emitted
+
+    classDef io fill:#e2e8f0,stroke:#334155,stroke-width:1px,color:#0f172a;
+    classDef component fill:#f8fafc,stroke:#0f172a,stroke-width:1px,color:#0f172a;
+    classDef storage fill:#fefce8,stroke:#854d0e,stroke-width:1px,color:#0f172a;
+    class user,emitted io;
+    class cli,cmds,render,validate component;
+    class store storage;
+
+%% --- Sequence: `cn emit <name>` (the hot path) -------------------------
+%% 1. User runs `cn emit <name>` from a project containing `.canopy/`.
+%% 2. `src/index.ts` parses the global flags (`--json`, `--quiet`, …) and
+%%    dispatches the `emit` Commander subcommand.
+%% 3. `src/commands/emit.ts` reads `.canopy/config.yaml` and
+%%    `.canopy/prompts.jsonl` through `src/store.ts` (advisory file lock
+%%    + atomic write semantics live in `src/store.ts`).
+%% 4. `src/render.ts` resolves the prompt's inheritance chain (last-write
+%%    wins per section name) into a single rendered record.
+%% 5. `src/validate.ts` enforces the prompt's `schema` (if any) against
+%%    `.canopy/schemas.jsonl`.
+%% 6. `emit.ts` writes the rendered prompt to the configured target
+%%    directory (`.md` by default, `.ts` if `emitAs` ends in `.ts`).
+%% 7. Downstream tools (overstory, warren, sapling) consume the emitted
+%%    files; canopy itself never reads them back.

@@ -73,7 +73,9 @@
 				"src/validate.ts",
 				"src/yaml.ts",
 				"scripts/check-debt-markers.ts",
-				"scripts/check-file-sizes.ts"
+				"scripts/check-file-sizes.ts",
+				"scripts/validate-agents-md.ts",
+				"scripts/generate-cli-docs.ts"
 			],
 			"linter": {
 				"rules": {
