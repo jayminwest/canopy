@@ -1,7 +1,37 @@
+# ---- node / bun ----------------------------------------------------
 node_modules/
 *.lock
 .canopy/*.lock
 bun.lockb
-.DS_Store
-*.log
+.bun/
+
+# ---- secrets & env -------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---- build / dist --------------------------------------------------
+dist/
+build/
+*.tsbuildinfo
 *.tgz
+
+# ---- test artifacts ------------------------------------------------
+coverage/
+test-results/
+junit.xml
+*.lcov
+
+# ---- IDE / editor --------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- OS noise ------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# ---- logs ----------------------------------------------------------
+*.log
+.run-plan-logs/

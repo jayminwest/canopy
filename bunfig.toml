@@ -1,0 +1,8 @@
+# Bun runtime configuration for canopy.
+# See https://bun.sh/docs/runtime/bunfig for available options.
+#
+# Tests live next to the file under test inside src/ (e.g. src/foo.test.ts,
+# src/commands/bar.test.ts), so test discovery is rooted at src/.
+
+[test]
+root = "src"

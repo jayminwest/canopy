@@ -1,0 +1,20 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"ignore": [
+		".bun/**",
+		"dist/**",
+		"coverage/**",
+		"test-results/**",
+		".canopy/**"
+	],
+	"workspaces": {
+		".": {
+			"entry": [
+				"src/index.ts",
+				"scripts/**/*.ts",
+				"**/*.test.ts"
+			],
+			"project": ["src/**/*.ts", "scripts/**/*.ts"]
+		}
+	}
+}

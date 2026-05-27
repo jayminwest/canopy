@@ -9,7 +9,15 @@
 		"rules": {
 			"recommended": true,
 			"complexity": {
-				"noForEach": "off"
+				"noForEach": "off",
+				"noExcessiveLinesPerFunction": {
+					"level": "error",
+					"options": { "maxLines": 500 }
+				},
+				"noExcessiveCognitiveComplexity": {
+					"level": "error",
+					"options": { "maxAllowedComplexity": 15 }
+				}
 			},
 			"correctness": {
 				"noUnusedVariables": "error",
@@ -20,7 +28,15 @@
 			},
 			"style": {
 				"noNonNullAssertion": "warn",
-				"useConst": "error"
+				"useConst": "error",
+				"useFilenamingConvention": {
+					"level": "error",
+					"options": {
+						"strictCase": true,
+						"requireAscii": true,
+						"filenameCases": ["kebab-case"]
+					}
+				}
 			}
 		}
 	},
@@ -28,5 +44,52 @@
 		"enabled": true,
 		"indentStyle": "tab",
 		"lineWidth": 100
-	}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"src/commands/archive.ts",
+				"src/commands/completions.ts",
+				"src/commands/create.ts",
+				"src/commands/diff.ts",
+				"src/commands/doctor.ts",
+				"src/commands/emit.ts",
+				"src/commands/history.ts",
+				"src/commands/import.ts",
+				"src/commands/list.ts",
+				"src/commands/onboard.ts",
+				"src/commands/pin.ts",
+				"src/commands/render.ts",
+				"src/commands/schema.ts",
+				"src/commands/show.ts",
+				"src/commands/sync.ts",
+				"src/commands/tree.ts",
+				"src/commands/update.ts",
+				"src/commands/upgrade.ts",
+				"src/commands/validate.ts",
+				"src/config.ts",
+				"src/frontmatter.ts",
+				"src/render.ts",
+				"src/validate.ts",
+				"src/yaml.ts"
+			],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveCognitiveComplexity": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/render.test.ts"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off"
+					}
+				}
+			}
+		}
+	]
 }
