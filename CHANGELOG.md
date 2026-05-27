@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-05-15
+
 ### Added
 - **`cn config` command** — schema-driven read/write surface for `.canopy/config.yaml`, mirroring `sd config` / `ml config` to complete warren V2's wire contract for the three primitive CLIs
   - `cn config schema [--json]` emits the JSON Schema for `.canopy/config.yaml` (canonical `targets` shape; `additionalProperties: false`); warren reads this once to auto-render a form
