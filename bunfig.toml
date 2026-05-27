@@ -1,8 +1,16 @@
 # Bun runtime configuration for canopy.
 # See https://bun.sh/docs/runtime/bunfig for available options.
 #
-# Tests live next to the file under test inside src/ (e.g. src/foo.test.ts,
-# src/commands/bar.test.ts), so test discovery is rooted at src/.
+# Tests live next to the file under test inside `src/` (e.g. src/foo.test.ts,
+# src/commands/bar.test.ts) and `scripts/` (toolkit ratchets), so test
+# discovery is rooted at the repo root. `bun test` picks up everything
+# matching *.test.ts under either tree.
+#
+# Coverage reporters default to text + lcov so that `bun test --coverage`
+# (used by `test:ci`) produces both the human-readable table in stderr
+# and `coverage/lcov.info` for downstream tooling without needing extra
+# CLI flags.
 
 [test]
-root = "src"
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"

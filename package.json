@@ -32,11 +32,15 @@
 	},
 	"scripts": {
 		"test": "bun test",
+		"test:ci": "bun test --coverage --reporter=junit --reporter-outfile=./junit.xml",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"typecheck": "tsc --noEmit",
 		"check:size": "bun run scripts/check-file-sizes.ts",
 		"check:debt": "bun run scripts/check-debt-markers.ts",
+		"check:coverage": "bun run scripts/check-coverage.ts",
+		"report:test-timing": "bun run scripts/report-test-timing.ts",
+		"report:quality-metrics": "bun run scripts/report-quality-metrics.ts",
 		"version:bump": "bun run scripts/version-bump.ts"
 	},
 	"devDependencies": {

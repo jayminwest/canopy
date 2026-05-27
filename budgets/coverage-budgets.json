@@ -1,0 +1,5 @@
+{
+	"_comment": "Coverage floors enforced by scripts/check-coverage.ts. Baselined from the 'All files' row of bun test --coverage (functions 83.35%, lines 73.11% as of 2026-05-27, with the new scripts/*.ts files contributing low coverage because their CLI main() runners shell out to bun and aren't unit-tested) and set slightly below to absorb measurement noise. The ratchet only goes UP — raise these as coverage improves; lowering them implies tests were deleted and needs a tracker reference in the diff.",
+	"functions": 82.0,
+	"lines": 72.0
+}
