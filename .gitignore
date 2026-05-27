@@ -1,6 +1,7 @@
 # ---- node / bun ----------------------------------------------------
 node_modules/
 *.lock
+!bun.lock
 .canopy/*.lock
 bun.lockb
 .bun/
