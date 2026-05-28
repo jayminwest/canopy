@@ -1,0 +1,123 @@
+# Canonical GitHub label taxonomy for canopy.
+#
+# This file is the source of truth for issue + PR labels. It is consumed by
+# `.github/workflows/sync-labels.yml`, which mirrors any drift back to the
+# GitHub repository on every push to `main` that touches this file.
+#
+# Conventions:
+#   * Namespaced labels use `<group>/<value>` (e.g. `priority/P1`, `area/cli`).
+#   * Each group uses a shared hue so labels are visually distinguishable:
+#       priority/*  -- red ramp (P0 darkest, P3 lightest)
+#       kind/*      -- blue ramp
+#       area/*      -- green ramp
+#       status/*    -- yellow ramp
+#   * Add or rename entries via PR; the sync workflow uses `--skip-delete`
+#     so manually-created labels are preserved (the source of truth still
+#     wins for any label name that appears here).
+
+# ---------------------------------------------------------------------------
+# Priority -- how urgent is the work?
+# ---------------------------------------------------------------------------
+- name: "priority/P0"
+  color: "b60205"
+  description: "Critical: production-impacting or blocking release; drop everything"
+- name: "priority/P1"
+  color: "d93f0b"
+  description: "High: required for the next milestone"
+- name: "priority/P2"
+  color: "fbca04"
+  description: "Medium: default priority for normal feature work"
+- name: "priority/P3"
+  color: "fef2c0"
+  description: "Low: nice-to-have; pick up when capacity allows"
+
+# ---------------------------------------------------------------------------
+# Kind -- what kind of change is this?
+# ---------------------------------------------------------------------------
+- name: "kind/bug"
+  color: "1d76db"
+  description: "Defect: existing behaviour is incorrect"
+- name: "kind/feature"
+  color: "2188ff"
+  description: "New user-facing capability"
+- name: "kind/chore"
+  color: "5cb3ff"
+  description: "Maintenance: tooling, CI, build, internal cleanup"
+- name: "kind/refactor"
+  color: "0e8a16"
+  description: "Internal restructure without behaviour change"
+- name: "kind/docs"
+  color: "0075ca"
+  description: "Documentation-only change"
+- name: "kind/test"
+  color: "bfd4f2"
+  description: "Test coverage: add, fix, or strengthen tests"
+- name: "kind/security"
+  color: "b60205"
+  description: "Security-sensitive change or vulnerability fix"
+
+# ---------------------------------------------------------------------------
+# Area -- which part of canopy does it touch?
+# ---------------------------------------------------------------------------
+- name: "area/cli"
+  color: "0e8a16"
+  description: "CLI commands and entry points (src/commands/, src/index.ts)"
+- name: "area/render"
+  color: "0e8a16"
+  description: "Prompt rendering + inheritance resolution (src/render.ts)"
+- name: "area/store"
+  color: "0e8a16"
+  description: "JSONL storage layer + advisory locks (src/store.ts)"
+- name: "area/validate"
+  color: "0e8a16"
+  description: "Schema validation (src/validate.ts)"
+- name: "area/emit"
+  color: "0e8a16"
+  description: "Rendered output emission (cn emit, src/commands/emit.ts)"
+- name: "area/config"
+  color: "0e8a16"
+  description: "Per-project canopy config (.canopy/config.yaml, src/config.ts)"
+- name: "area/build"
+  color: "0e8a16"
+  description: "Build, CI, lint, type-check, ratchets, tooling (.github/, scripts/)"
+- name: "area/docs"
+  color: "0e8a16"
+  description: "Documentation (README, SPEC, AGENTS.md, docs/)"
+- name: "area/deps"
+  color: "0e8a16"
+  description: "Dependency updates (Dependabot, bun.lock, package.json)"
+
+# ---------------------------------------------------------------------------
+# Status -- where does this sit in the workflow?
+# ---------------------------------------------------------------------------
+- name: "status/needs-triage"
+  color: "fbca04"
+  description: "Newly filed; needs priority/area/kind before pickup"
+- name: "status/blocked"
+  color: "e99695"
+  description: "Cannot proceed: waiting on dependency, decision, or external party"
+- name: "status/in-progress"
+  color: "c5def5"
+  description: "Actively being worked on"
+- name: "status/needs-review"
+  color: "fbca04"
+  description: "Implementation complete; awaiting review"
+- name: "status/needs-info"
+  color: "fbca04"
+  description: "Waiting on the reporter for clarification or reproduction steps"
+- name: "status/wontfix"
+  color: "ffffff"
+  description: "Will not be worked on; out of scope or by design"
+- name: "status/duplicate"
+  color: "cfd3d7"
+  description: "Tracked elsewhere; closed in favour of the canonical issue"
+
+# ---------------------------------------------------------------------------
+# Discovery -- highlight contributor-friendly work
+# ---------------------------------------------------------------------------
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good entry point for first-time contributors"
+- name: "help wanted"
+  color: "008672"
+  description: "Maintainers welcome external contributions here"

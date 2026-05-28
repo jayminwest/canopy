@@ -31,6 +31,7 @@
 		"bun": ">=1.0.0"
 	},
 	"scripts": {
+		"prepare": "[ -e .git ] && git config core.hooksPath scripts/hooks || true",
 		"test": "bun test",
 		"test:ci": "bun test --coverage --reporter=junit --reporter-outfile=./junit.xml",
 		"lint": "biome check .",

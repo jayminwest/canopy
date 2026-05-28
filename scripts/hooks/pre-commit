@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# L5 toolkit pre-commit gate. Runs Biome + tsc so broken lint/typecheck
+# never lands on main. Keep this in sync with the CI gate
+# (.github/workflows/ci.yml) — diverging here recreates the gate-drift
+# these scripts exist to prevent.
+set -euo pipefail
+bun run lint
+bun run typecheck

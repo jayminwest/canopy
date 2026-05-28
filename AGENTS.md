@@ -174,11 +174,29 @@ tracker reference on the same line. Accepted prefixes:
 
 ### Log scrubbing
 
-Any structured logger in canopy goes through `src/output.ts`. Sensitive
+All structured output in canopy goes through `src/output.ts`. Sensitive
 values that may appear in arguments or environment (e.g., `npm` tokens,
 GitHub PATs, API keys) must never be printed in human or JSON output.
-If a new sensitive field is introduced, scrub it at the call site and
-add a regression test under `src/`.
+
+`src/output.ts` exports a `redact()` helper that is applied inside both
+`jsonOut()` and `errorOut()`. The helper walks objects/arrays recursively
+and replaces any value whose key matches the sensitive policy with
+`"[REDACTED]"`. Sensitive keys are matched case-insensitively against:
+
+- exact names: `npmToken`, `apiKey`, `secret`;
+- suffix patterns: `*.password`, `*.token`, `*.secret`, `*.apiKey`
+  (also matched against `_` and `-` separators, e.g. `admin_password`,
+  `github-token`).
+
+The helper additionally scrubs `key=value` and `key: value` pairs
+embedded in free-form strings (so `apiKey=sk-...` in an error message
+becomes `apiKey=[REDACTED]`). If a new sensitive field shape is
+introduced that does not fit the policy above, extend the helper in the
+same commit and add a regression test next to `src/output.test.ts`.
+
+Command handlers must NEVER `console.log` / `console.error` directly —
+always go through `humanOut` / `jsonOut` / `errorOut` so the `--json`
+contract and the redaction pass apply uniformly.
 
 ### Configuration
 
