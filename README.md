@@ -232,10 +232,6 @@ canopy/
 
 Canopy is part of the [os-eco](https://github.com/jayminwest/os-eco) AI agent tooling ecosystem.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/jayminwest/os-eco/main/branding/logo.png" alt="os-eco" width="444" />
-</p>
-
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on setting up a development environment, coding conventions, and submitting pull requests.
