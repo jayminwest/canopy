@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-06-07
+
+### Added
+- **L5 agent-readiness toolkit** — ported the canonical L5 governance and tooling baseline into the repo
+  - File-size, debt-marker, and coverage ratchet scripts (`scripts/check-file-sizes.ts`, `scripts/check-debt-markers.ts`, `scripts/check-coverage.ts`) backed by JSON budgets in `budgets/`
+  - Test-timing and quality-metrics reporters (`scripts/report-test-timing.ts`, `scripts/report-quality-metrics.ts`)
+  - AGENTS.md validator (`scripts/validate-agents-md.ts`) and CLI doc generator (`scripts/generate-cli-docs.ts` → `docs/cli-reference.md`)
+  - `RUNBOOK.md` release/triage/rollback procedures, service-flow architecture diagram, and a repo-local `.factory/skills/` prompt-workflow skill
+  - Baseline drop-ins for naming consistency, cyclomatic complexity, duplicate-code detection (`jscpd`), unused-dependency detection (`knip`), devcontainer, env template, and a comprehensive `.gitignore`
+- **Governance scaffolding** — pre-commit hook, log-redaction policy in `src/output.ts`, minimum-release-age cooldown, and an issue-labeling system
+
+### Changed
+- **CI** — wired the `check:all` aggregator plus CI reporters and artifact uploads into the pipeline
+- Tracked `bun.lock` and unignored it in `.gitignore` so dependencies are pinned
+
+### Fixed
+- Removed a broken os-eco logo embed from `README.md`
+
 ## [0.2.5] - 2026-05-15
 
 ### Added
