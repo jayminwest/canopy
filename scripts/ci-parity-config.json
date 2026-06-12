@@ -1,0 +1,7 @@
+{
+	"$comment": "Per-repo escape hatches for check-ci-parity.ts (docs/check-all-standard.md §6). aliases: test:ci runs the same tests+coverage gate as check:coverage but with the junit reporter CI needs for the timing artifact. ciOnly: the report:* steps are always() log summaries with no local enforcement equivalent.",
+	"aliases": {
+		"test:ci": "check:coverage"
+	},
+	"ciOnly": ["report:test-timing", "report:quality-metrics"]
+}

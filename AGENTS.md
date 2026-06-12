@@ -48,6 +48,9 @@ canopy/
 │   ├── yaml.ts             # minimal built-in YAML parser
 │   └── ...
 ├── scripts/                # quality-gate scripts (size, debt, coverage, …)
+│   ├── check-all.ts            # canonical quiet runner (byte-identical fleet-wide)
+│   ├── check-ci-parity.ts      # CI ⇄ check:all parity gate (byte-identical fleet-wide)
+│   ├── ci-parity-config.json   # per-repo parity escape hatches (aliases / ciOnly)
 │   ├── validate-agents-md.ts   # validates this file's references
 │   ├── generate-cli-docs.ts    # emits docs/cli-reference.md
 │   ├── check-file-sizes.ts
@@ -90,15 +93,32 @@ bun run test:ci                   # bun test with coverage + junit reporters
 Quality gates (each lives in `scripts/`):
 
 ```bash
+bun run check:all                 # scripts/check-all.ts — canonical quiet runner (10 gates)
+bun run verify                    # alias for check:all (agent-facing entry point)
 bun run check:size                # scripts/check-file-sizes.ts
 bun run check:debt                # scripts/check-debt-markers.ts
+bun run check:dups                # jscpd duplication budget
+bun run check:deps                # knip unused/undeclared dependencies
 bun run check:coverage            # scripts/check-coverage.ts
 bun run check:agents              # scripts/validate-agents-md.ts (this file)
+bun run check:ci-parity           # scripts/check-ci-parity.ts — CI ⇄ check:all parity
 bun run gen:docs                  # emit docs/cli-reference.md from src/index.ts
 bun run gen:docs:check            # fail CI when docs/cli-reference.md is stale
 bun run report:test-timing        # slowest suites/tests from junit.xml
 bun run report:quality-metrics    # consolidated quality summary
 ```
+
+`check:all` follows the os-eco check:all standard (see
+check-all-standard.md under docs/ at the os-eco meta-repo root, not in
+this repo): the ordered manifest
+is `lint → typecheck → check:agents → check:dups → check:deps →
+check:size → check:debt → gen:docs:check → check:coverage →
+check:ci-parity`, with quiet one-line-per-gate output and a final
+tally. `scripts/check-all.ts` and `scripts/check-ci-parity.ts` are
+byte-identical fleet-wide — never edit them in place; per-repo
+variation lives in `package.json` scripts and
+`scripts/ci-parity-config.json`. `CHECK_ALL_VERBOSE=1` streams full
+gate output; `--bail` stops at the first failure.
 
 Each gate either passes silently or prints a remediation pointer. The
 ratchet scripts (`check:size`, `check:debt`, `check:coverage`) read
@@ -106,9 +126,11 @@ JSON budgets from `budgets/`; the budgets are baselined from the
 repo's current state and only tighten over time (size + debt move
 down, coverage moves up).
 
-CI invokes `bun run lint`, `bun run typecheck`, `bun test`,
-`bun run check:agents`, and `bun run gen:docs:check` on every push to
-`main` and every pull request (see `.github/workflows/ci.yml`).
+CI invokes `bun run check:all` plus `bun run test:ci` (the same
+tests+coverage gate with junit reporters) on every push to `main` and
+every pull request (see `.github/workflows/ci.yml`); the
+`check:ci-parity` gate proves CI and the local gate surface stay
+equivalent.
 
 User-facing `cn` reference:
 
@@ -210,19 +232,17 @@ parallel agents in different worktrees never corrupt the JSONL.
 
 ### Per-change verification
 
-Before committing any code change run all of the following from the
+Before committing any code change run the canonical aggregate from the
 repo root:
 
 ```bash
-bun run lint
-bun run typecheck
-bun test
-bun run check:agents
-bun run gen:docs:check
+bun run verify          # = bun run check:all (10 gates, quiet output)
 ```
 
-All five must exit 0. CI runs the same five — local greens are the
-contract. If you added a new `cn` subcommand or changed an existing
+All 10 gates must exit 0. CI runs the same manifest (enforced by the
+`check:ci-parity` gate) — local greens are the contract. To iterate on
+a single gate, re-run it directly (e.g. `bun run typecheck` or
+`bun test src/render.test.ts`). If you added a new `cn` subcommand or changed an existing
 flag, `gen:docs:check` will fail until you run `bun run gen:docs` and
 commit the updated `docs/cli-reference.md`.
 

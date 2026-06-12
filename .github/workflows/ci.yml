@@ -16,23 +16,11 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Lint
-        run: bun run lint
-
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Aggregate quality checks
+      - name: Quality gates (check:all)
         run: bun run check:all
-
-      - name: Generated CLI docs are up to date
-        run: bun run gen:docs:check
 
       - name: Run tests (CI reporter)
         run: bun run test:ci
-
-      - name: Coverage ratchet
-        run: bun run check:coverage
 
       - name: Test timing summary
         if: always()
