@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
 	"files": {
 		"includes": ["src/**", "scripts/**", "!**/node_modules"]
 	},
@@ -46,6 +46,12 @@
 		"lineWidth": 100
 	},
 	"overrides": [
+		{
+			"includes": ["scripts/check-all.ts", "scripts/check-ci-parity.ts"],
+			"formatter": {
+				"enabled": false
+			}
+		},
 		{
 			"includes": [
 				"src/commands/archive.ts",
